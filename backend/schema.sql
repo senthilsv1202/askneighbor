@@ -166,6 +166,63 @@ CREATE TRIGGER reviews_rating_update
   AFTER INSERT OR UPDATE OR DELETE ON reviews
   FOR EACH ROW EXECUTE FUNCTION update_provider_rating();
 
+-- ── COMMUNITIES ───────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS communities (
+  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name         TEXT NOT NULL,
+  slug         TEXT NOT NULL UNIQUE,
+  description  TEXT,
+  city         TEXT,
+  state        TEXT,
+  zip_code     TEXT,
+  created_by   UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  invite_code  TEXT NOT NULL UNIQUE,
+  is_active    BOOLEAN DEFAULT TRUE,
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ── COMMUNITY MEMBERS ─────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS community_members (
+  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  community_id  UUID NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+  user_id       UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  role          TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'moderator', 'member')),
+  invited_by    UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  joined_at     TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(community_id, user_id)
+);
+
+-- ── INVITES ───────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS invites (
+  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  community_id  UUID NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+  code          TEXT NOT NULL UNIQUE,
+  created_by    UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  max_uses      INTEGER DEFAULT 10,
+  use_count     INTEGER DEFAULT 0,
+  expires_at    TIMESTAMPTZ,
+  is_active     BOOLEAN DEFAULT TRUE,
+  created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_community_members_user ON community_members(user_id);
+CREATE INDEX IF NOT EXISTS idx_community_members_comm ON community_members(community_id);
+CREATE INDEX IF NOT EXISTS idx_invites_code           ON invites(code);
+
+ALTER TABLE communities      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE community_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE invites          ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "communities_read"   ON communities FOR SELECT USING (true);
+CREATE POLICY "communities_insert" ON communities FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY "communities_update" ON communities FOR UPDATE USING (auth.uid() = created_by);
+
+CREATE POLICY "members_read"   ON community_members FOR SELECT USING (true);
+CREATE POLICY "members_insert" ON community_members FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+CREATE POLICY "invites_read"   ON invites FOR SELECT USING (auth.uid() = created_by);
+CREATE POLICY "invites_insert" ON invites FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
 -- ── SEED CATEGORIES ───────────────────────────────────────────
 INSERT INTO categories (name, slug, icon, description, sort_order) VALUES
   ('Doctors & Medical',     'doctors',      'stethoscope',   'Pediatricians, dentists, eye doctors, specialists',           1),

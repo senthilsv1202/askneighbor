@@ -1,8 +1,10 @@
-import { supabase } from './supabase.js';
+import { supabase, isDemoMode } from './supabase.js';
+import { demoApi } from './demo-data.js';
 
 const API = import.meta.env.VITE_API_URL || '';
 
 async function authHeaders() {
+  if (!supabase) return {};
   const { data: { session } } = await supabase.auth.getSession();
   return session ? { Authorization: `Bearer ${session.access_token}` } : {};
 }
@@ -18,7 +20,7 @@ async function request(path, options = {}) {
   return res.json();
 }
 
-export const api = {
+const liveApi = {
   getCategories: () => request('/api/categories'),
   getCategory: (slug) => request(`/api/categories/${slug}`),
   getProviders: (params) => {
@@ -32,4 +34,13 @@ export const api = {
   getFavorites: () => request('/api/favorites'),
   addFavorite: (provider_id) => request('/api/favorites', { method: 'POST', body: JSON.stringify({ provider_id }) }),
   removeFavorite: (providerId) => request(`/api/favorites/${providerId}`, { method: 'DELETE' }),
+  validateInvite: (code) => request('/api/invites/validate', { method: 'POST', body: JSON.stringify({ code }) }),
+  joinCommunity: (code) => request('/api/invites/join', { method: 'POST', body: JSON.stringify({ code }) }),
+  createCommunity: (data) => request('/api/communities', { method: 'POST', body: JSON.stringify(data) }),
+  getMyCommunities: () => request('/api/communities/my'),
+  generateInvite: (data) => request('/api/invites/generate', { method: 'POST', body: JSON.stringify(data) }),
+  parseMessage: (message) => request('/api/parse/message', { method: 'POST', body: JSON.stringify({ message }) }),
+  parseChatExport: (text) => request('/api/parse/chat-export', { method: 'POST', body: JSON.stringify({ text }) }),
 };
+
+export const api = isDemoMode ? demoApi : liveApi;

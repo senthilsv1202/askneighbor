@@ -8,6 +8,9 @@ import categoriesRouter from './routes/categories.js';
 import providersRouter from './routes/providers.js';
 import reviewsRouter from './routes/reviews.js';
 import favoritesRouter from './routes/favorites.js';
+import communitiesRouter from './routes/communities.js';
+import invitesRouter from './routes/invites.js';
+import parseRouter from './routes/parse.js';
 
 dotenv.config();
 
@@ -33,6 +36,9 @@ app.use('/api/categories', categoriesRouter);
 app.use('/api/providers', providersRouter);
 app.use('/api/reviews', reviewsRouter);
 app.use('/api/favorites', favoritesRouter);
+app.use('/api/communities', communitiesRouter);
+app.use('/api/invites', invitesRouter);
+app.use('/api/parse', parseRouter);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 

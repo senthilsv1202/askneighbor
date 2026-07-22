@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { supabase } from './lib/supabase.js';
+import { supabase, isDemoMode } from './lib/supabase.js';
 import Navbar from './components/Navbar.jsx';
 import Home from './pages/Home.jsx';
 import CategoryPage from './pages/CategoryPage.jsx';
@@ -15,6 +15,10 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isDemoMode) {
+      setLoading(false);
+      return;
+    }
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
@@ -36,10 +40,15 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar user={user} />
+      {isDemoMode && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-center text-sm text-amber-800">
+          Running in demo mode with sample data. Connect Supabase to enable sign-in, reviews, and favorites.
+        </div>
+      )}
       <main className="max-w-6xl mx-auto px-4 py-8">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/category/:slug" element={<CategoryPage />} />
+          <Route path="/category/:slug" element={<CategoryPage user={user} />} />
           <Route path="/provider/:id" element={<ProviderPage user={user} />} />
           <Route path="/add" element={user ? <AddProvider /> : <Auth />} />
           <Route path="/search" element={<SearchResults />} />
