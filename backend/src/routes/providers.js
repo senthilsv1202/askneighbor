@@ -6,15 +6,27 @@ const router = Router();
 function maskPhone(phone) {
   if (!phone) return null;
   const digits = phone.replace(/\D/g, '');
-  if (digits.length < 4) return '***';
-  return phone.slice(0, -4).replace(/\d/g, '*') + phone.slice(-4).replace(/\d(?=\d{2})/g, '*').slice(0, -2) + phone.slice(-2);
+  if (digits.length >= 10) {
+    return `(***) ***-${digits.slice(-4)}`;
+  }
+  if (digits.length >= 4) {
+    return `***-${digits.slice(-4)}`;
+  }
+  return '***';
+}
+
+function maskEmail(email) {
+  if (!email) return null;
+  const [local, domain] = email.split('@');
+  if (!domain) return '***';
+  return `${local.slice(0, 2)}***@${domain}`;
 }
 
 function maskProviders(providers) {
   return providers.map(p => ({
     ...p,
     phone: maskPhone(p.phone),
-    email: p.email ? p.email.replace(/(.{2})(.*)(@)/, '$1***$3') : null,
+    email: maskEmail(p.email),
   }));
 }
 

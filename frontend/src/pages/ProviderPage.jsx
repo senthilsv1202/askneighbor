@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronRight, MapPin, Phone, Globe, Mail, Heart, Clock, Shield, Flag } from 'lucide-react';
+import { ChevronRight, MapPin, Phone, Globe, Mail, Heart, Clock, Shield, Flag, Pencil, X, Check } from 'lucide-react';
 import { api } from '../lib/api.js';
 import StarRating from '../components/StarRating.jsx';
 
@@ -15,6 +15,10 @@ export default function ProviderPage({ user }) {
   const [showRemovalForm, setShowRemovalForm] = useState(false);
   const [removalForm, setRemovalForm] = useState({ reason: '', requester_name: '', requester_email: '' });
   const [removalSubmitted, setRemovalSubmitted] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [editError, setEditError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     api.getProvider(id)
@@ -59,6 +63,46 @@ export default function ProviderPage({ user }) {
     }
   }
 
+  const isOwner = user && provider?.added_by === user.id;
+
+  function startEditing() {
+    setEditForm({
+      name: provider.name || '',
+      phone: provider.phone || '',
+      email: provider.email || '',
+      website: provider.website || '',
+      address: provider.address || '',
+      city: provider.city || '',
+      state: provider.state || '',
+      zip_code: provider.zip_code || '',
+      description: provider.description || '',
+      services: (provider.services || []).join(', '),
+      insurance_accepted: (provider.insurance_accepted || []).join(', '),
+    });
+    setEditing(true);
+    setEditError('');
+  }
+
+  async function saveEdit(e) {
+    e.preventDefault();
+    setSaving(true);
+    setEditError('');
+    try {
+      await api.updateProvider(id, {
+        ...editForm,
+        services: editForm.services ? editForm.services.split(',').map(s => s.trim()).filter(Boolean) : [],
+        insurance_accepted: editForm.insurance_accepted ? editForm.insurance_accepted.split(',').map(s => s.trim()).filter(Boolean) : [],
+      });
+      const updated = await api.getProvider(id);
+      setProvider(updated);
+      setEditing(false);
+    } catch (err) {
+      setEditError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center py-20">
@@ -97,11 +141,18 @@ export default function ProviderPage({ user }) {
               </span>
             )}
           </div>
-          {user && (
-            <button onClick={toggleFavorite} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
-              <Heart className={`w-6 h-6 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-slate-400'}`} />
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {isOwner && !editing && (
+              <button onClick={startEditing} className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-200 transition-colors">
+                <Pencil className="w-4 h-4" /> Edit
+              </button>
+            )}
+            {user && (
+              <button onClick={toggleFavorite} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
+                <Heart className={`w-6 h-6 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-slate-400'}`} />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-3 mb-4">
@@ -115,9 +166,92 @@ export default function ProviderPage({ user }) {
           )}
         </div>
 
-        {provider.description && <p className="text-slate-600 mb-6">{provider.description}</p>}
+        {provider.description && !editing && <p className="text-slate-600 mb-6">{provider.description}</p>}
 
-        <div className="grid sm:grid-cols-2 gap-4">
+        {editing && (
+          <form onSubmit={saveEdit} className="mb-6 space-y-4 border-t border-slate-200 pt-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold text-slate-800">Edit Provider</h3>
+              <button type="button" onClick={() => setEditing(false)} className="p-1 text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Name</label>
+                <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Phone</label>
+                <input type="tel" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Description</label>
+              <textarea value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} rows={2}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" />
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Email</label>
+                <input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">Website</label>
+                <input type="url" value={editForm.website} onChange={(e) => setEditForm({ ...editForm, website: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Address</label>
+              <input type="text" value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">City</label>
+                <input type="text" value={editForm.city} onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">State</label>
+                <input type="text" value={editForm.state} onChange={(e) => setEditForm({ ...editForm, state: e.target.value })} maxLength={2}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">ZIP</label>
+                <input type="text" value={editForm.zip_code} onChange={(e) => setEditForm({ ...editForm, zip_code: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Services (comma-separated)</label>
+              <input type="text" value={editForm.services} onChange={(e) => setEditForm({ ...editForm, services: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1">Insurance Accepted (comma-separated)</label>
+              <input type="text" value={editForm.insurance_accepted} onChange={(e) => setEditForm({ ...editForm, insurance_accepted: e.target.value })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            </div>
+            {editError && <p className="text-red-500 text-sm">{editError}</p>}
+            <div className="flex gap-3">
+              <button type="submit" disabled={saving}
+                className="flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50 transition-colors">
+                <Check className="w-4 h-4" /> {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button type="button" onClick={() => setEditing(false)}
+                className="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors">
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+
+        {!editing && <div className="grid sm:grid-cols-2 gap-4">
           {provider.phone && (
             <a href={`tel:${provider.phone}`} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl hover:bg-primary-50 transition-colors">
               <Phone className="w-5 h-5 text-primary-600" />
@@ -144,7 +278,9 @@ export default function ProviderPage({ user }) {
           )}
         </div>
 
-        {provider.services?.length > 0 && (
+        }
+
+        {!editing && provider.services?.length > 0 && (
           <div className="mt-6">
             <h3 className="font-semibold text-slate-800 mb-2">Services</h3>
             <div className="flex flex-wrap gap-2">

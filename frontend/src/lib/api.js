@@ -29,6 +29,7 @@ const liveApi = {
   },
   getProvider: (id) => request(`/api/providers/${id}`),
   createProvider: (data) => request('/api/providers', { method: 'POST', body: JSON.stringify(data) }),
+  updateProvider: (id, data) => request(`/api/providers/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   getReviews: (providerId) => request(`/api/reviews/provider/${providerId}`),
   createReview: (data) => request('/api/reviews', { method: 'POST', body: JSON.stringify(data) }),
   getFavorites: () => request('/api/favorites'),
