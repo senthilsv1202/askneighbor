@@ -10,6 +10,7 @@ import AddProvider from './pages/AddProvider.jsx';
 import SearchResults from './pages/SearchResults.jsx';
 import Auth from './pages/Auth.jsx';
 import Favorites from './pages/Favorites.jsx';
+import Privacy from './pages/Privacy.jsx';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -67,6 +68,7 @@ export default function App() {
           <Route path="/search" element={<SearchResults community={community} />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/favorites" element={user ? <Favorites /> : <Auth />} />
+          <Route path="/privacy" element={<Privacy />} />
         </Routes>
       </main>
     </div>

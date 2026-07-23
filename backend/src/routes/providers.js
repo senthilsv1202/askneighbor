@@ -3,7 +3,23 @@ import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
-router.get('/', async (req, res) => {
+function maskPhone(phone) {
+  if (!phone) return null;
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 4) return '***';
+  return phone.slice(0, -4).replace(/\d/g, '*') + phone.slice(-4).replace(/\d(?=\d{2})/g, '*').slice(0, -2) + phone.slice(-2);
+}
+
+function maskProviders(providers) {
+  return providers.map(p => ({
+    ...p,
+    phone: maskPhone(p.phone),
+    email: p.email ? p.email.replace(/(.{2})(.*)(@)/, '$1***$3') : null,
+  }));
+}
+
+// List providers — requires auth, returns masked contact info
+router.get('/', requireAuth, async (req, res) => {
   const { category, city, zip, q, sort = 'rating', page = 1, limit = 20, community_id, nearby } = req.query;
   const offset = (page - 1) * limit;
 
@@ -46,10 +62,11 @@ router.get('/', async (req, res) => {
   const { data, error, count } = await query;
   if (error) return res.status(500).json({ error: error.message });
 
-  res.json({ providers: data, total: count, page: Number(page), limit: Number(limit) });
+  res.json({ providers: maskProviders(data || []), total: count, page: Number(page), limit: Number(limit) });
 });
 
-router.get('/:id', async (req, res) => {
+// Get full provider details — requires auth, returns full contact info
+router.get('/:id', requireAuth, async (req, res) => {
   const { data, error } = await req.supabase
     .from('providers')
     .select('*, categories(name, slug, icon), communities(id, name, slug, city, state), reviews(*, profiles(full_name, avatar_url))')
@@ -60,8 +77,9 @@ router.get('/:id', async (req, res) => {
   res.json(data);
 });
 
+// Create provider — requires auth + consent acknowledgment
 router.post('/', requireAuth, async (req, res) => {
-  const { name, category_id, community_id, phone, email, website, address, city, state, zip_code, description, insurance_accepted, services } = req.body;
+  const { name, category_id, community_id, phone, email, website, address, city, state, zip_code, description, insurance_accepted, services, consent_acknowledged } = req.body;
 
   if (!name || !category_id) return res.status(400).json({ error: 'Name and category are required' });
 
@@ -89,6 +107,7 @@ router.post('/', requireAuth, async (req, res) => {
   res.status(201).json(data);
 });
 
+// Update provider
 router.put('/:id', requireAuth, async (req, res) => {
   const { name, phone, email, website, address, city, state, zip_code, description, insurance_accepted, services } = req.body;
 
@@ -102,6 +121,24 @@ router.put('/:id', requireAuth, async (req, res) => {
 
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
+});
+
+// Request removal — anyone can request, stores for admin review
+router.post('/:id/removal-request', async (req, res) => {
+  const { reason, requester_name, requester_email } = req.body;
+  if (!reason || !requester_email) return res.status(400).json({ error: 'Reason and email are required' });
+
+  const { error } = await req.supabase
+    .from('removal_requests')
+    .insert({
+      provider_id: req.params.id,
+      reason,
+      requester_name: requester_name || 'Anonymous',
+      requester_email
+    });
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ message: 'Removal request submitted. We will review it within 48 hours.' });
 });
 
 export default router;

@@ -295,11 +295,26 @@ export default function AddProvider({ community }) {
             <input type="text" value={form.insurance_accepted} onChange={updateField('insurance_accepted')} placeholder="Aetna, BlueCross, UnitedHealth" className={inputClass} />
           </div>
 
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.consent}
+                onChange={(e) => setForm({ ...form, consent: e.target.checked })}
+                className="mt-1 w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span className="text-sm text-slate-700">
+                I confirm that the information I'm sharing is publicly available business/professional contact information, or I have the provider's permission to share it.
+                Providers can <a href="/privacy" className="text-primary-600 underline">request removal</a> at any time.
+              </span>
+            </label>
+          </div>
+
           {error && <p className="text-red-500 text-sm">{error}</p>}
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !form.consent}
             className="w-full py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 disabled:opacity-50 transition-colors"
           >
             {submitting ? 'Adding...' : 'Add Recommendation'}

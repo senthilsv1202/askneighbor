@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronRight, MapPin, Phone, Globe, Mail, Heart, Clock, Shield } from 'lucide-react';
+import { ChevronRight, MapPin, Phone, Globe, Mail, Heart, Clock, Shield, Flag } from 'lucide-react';
 import { api } from '../lib/api.js';
 import StarRating from '../components/StarRating.jsx';
 
@@ -12,6 +12,9 @@ export default function ProviderPage({ user }) {
   const [reviewForm, setReviewForm] = useState({ rating: 0, title: '', body: '' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showRemovalForm, setShowRemovalForm] = useState(false);
+  const [removalForm, setRemovalForm] = useState({ reason: '', requester_name: '', requester_email: '' });
+  const [removalSubmitted, setRemovalSubmitted] = useState(false);
 
   useEffect(() => {
     api.getProvider(id)
@@ -192,6 +195,49 @@ export default function ProviderPage({ user }) {
           </div>
         ) : (
           <p className="text-slate-500">No reviews yet. Be the first to share your experience!</p>
+        )}
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-slate-400">
+            Are you this provider?{' '}
+            <button onClick={() => setShowRemovalForm(!showRemovalForm)} className="text-primary-600 hover:underline">
+              <Flag className="w-3 h-3 inline" /> Request Removal
+            </button>
+          </p>
+          <a href="/privacy" className="text-xs text-slate-400 hover:text-primary-600">Privacy Policy</a>
+        </div>
+        {showRemovalForm && !removalSubmitted && (
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                const API = import.meta.env.VITE_API_URL || '';
+                await fetch(`${API}/api/providers/${id}/removal-request`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(removalForm),
+                });
+                setRemovalSubmitted(true);
+              } catch (_) {}
+            }}
+            className="mt-4 space-y-3"
+          >
+            <p className="text-sm text-slate-600">If you are this provider and want your listing removed, please fill out this form. We'll process your request within 48 hours.</p>
+            <input type="text" placeholder="Your name" value={removalForm.requester_name} onChange={(e) => setRemovalForm({ ...removalForm, requester_name: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            <input type="email" placeholder="Your email (required)" value={removalForm.requester_email} onChange={(e) => setRemovalForm({ ...removalForm, requester_email: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" required />
+            <textarea placeholder="Reason for removal" value={removalForm.reason} onChange={(e) => setRemovalForm({ ...removalForm, reason: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none" rows={2} required />
+            <button type="submit" className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors">
+              Submit Removal Request
+            </button>
+          </form>
+        )}
+        {removalSubmitted && (
+          <p className="mt-3 text-sm text-green-600">Removal request submitted. We'll process it within 48 hours.</p>
         )}
       </div>
 
