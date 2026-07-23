@@ -30,7 +30,7 @@ Doctors & Medical | Home Services | Restaurants & Food | Education & Tutoring | 
 
 *How to Get Started:*
 
-Step 1 → Open the app: https://frontend-six-lake-82.vercel.app
+Step 1 → Open the app: https://askneighbor.dhanishsoftwaresolutions.com
 
 Step 2 → Enter the invite code: MONROE2026
 
