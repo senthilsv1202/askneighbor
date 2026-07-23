@@ -137,6 +137,11 @@ export const demoApi = {
   createCommunity: () => Promise.reject(new Error('Connect Supabase to enable this feature')),
   getMyCommunities: () => Promise.resolve([]),
   generateInvite: () => Promise.reject(new Error('Connect Supabase to enable this feature')),
+  getNearbyCommunities: () => Promise.resolve([
+    { id: 'c2', name: 'Edison Indian Community', city: 'Edison', state: 'NJ' },
+    { id: 'c3', name: 'East Brunswick Community', city: 'East Brunswick', state: 'NJ' },
+  ]),
+  getCommunityMembers: () => Promise.resolve([]),
   parseMessage: (message) => {
     return Promise.resolve({
       providers: [{

@@ -4,7 +4,7 @@ import { ChevronRight, SlidersHorizontal, Plus, MessageSquare, Sparkles, Loader2
 import { api } from '../lib/api.js';
 import ProviderCard from '../components/ProviderCard.jsx';
 
-export default function CategoryPage({ user }) {
+export default function CategoryPage({ user, community }) {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [category, setCategory] = useState(null);
@@ -32,11 +32,13 @@ export default function CategoryPage({ user }) {
 
   useEffect(() => {
     loadProviders();
-  }, [slug, sort]);
+  }, [slug, sort, community]);
 
   function loadProviders() {
     setLoading(true);
-    api.getProviders({ category: slug, sort })
+    const params = { category: slug, sort };
+    if (community?.id) { params.community_id = community.id; params.nearby = 'true'; }
+    api.getProviders(params)
       .then((res) => {
         setProviders(res.providers);
         setTotal(res.total);

@@ -4,7 +4,7 @@ import { Search } from 'lucide-react';
 import { api } from '../lib/api.js';
 import ProviderCard from '../components/ProviderCard.jsx';
 
-export default function SearchResults() {
+export default function SearchResults({ community }) {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
   const [providers, setProviders] = useState([]);
@@ -14,7 +14,9 @@ export default function SearchResults() {
   useEffect(() => {
     if (!query) { setLoading(false); return; }
     setLoading(true);
-    api.getProviders({ q: query })
+    const params = { q: query };
+    if (community?.id) { params.community_id = community.id; params.nearby = 'true'; }
+    api.getProviders(params)
       .then((res) => {
         setProviders(res.providers);
         setTotal(res.total);

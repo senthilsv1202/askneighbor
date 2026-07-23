@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MessageSquare, Sparkles, FileText, Loader2 } from 'lucide-react';
 import { api } from '../lib/api.js';
 
-export default function AddProvider() {
+export default function AddProvider({ community }) {
   const [searchParams] = useSearchParams();
   const preselectedCategory = searchParams.get('category') || '';
   const [categories, setCategories] = useState([]);
@@ -111,6 +111,7 @@ export default function AddProvider() {
     try {
       const payload = {
         ...form,
+        community_id: community?.id || null,
         services: form.services ? form.services.split(',').map((s) => s.trim()).filter(Boolean) : [],
         insurance_accepted: form.insurance_accepted ? form.insurance_accepted.split(',').map((s) => s.trim()).filter(Boolean) : []
       };

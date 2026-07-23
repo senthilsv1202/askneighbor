@@ -39,6 +39,8 @@ const liveApi = {
   createCommunity: (data) => request('/api/communities', { method: 'POST', body: JSON.stringify(data) }),
   getMyCommunities: () => request('/api/communities/my'),
   generateInvite: (data) => request('/api/invites/generate', { method: 'POST', body: JSON.stringify(data) }),
+  getNearbyCommunities: () => request('/api/communities/nearby'),
+  getCommunityMembers: (id) => request(`/api/communities/${id}/members`),
   parseMessage: (message) => request('/api/parse/message', { method: 'POST', body: JSON.stringify({ message }) }),
   parseChatExport: (text) => request('/api/parse/chat-export', { method: 'POST', body: JSON.stringify({ text }) }),
 };

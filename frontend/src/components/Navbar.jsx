@@ -1,11 +1,21 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Plus, Heart, LogOut, Users } from 'lucide-react';
-import { useState } from 'react';
+import { Search, Plus, Heart, LogOut, Users, ChevronDown, MapPin } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase.js';
 
-export default function Navbar({ user }) {
+export default function Navbar({ user, community, myCommunities, onSwitchCommunity }) {
   const [query, setQuery] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setShowDropdown(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   function handleSearch(e) {
     e.preventDefault();
@@ -24,6 +34,34 @@ export default function Navbar({ user }) {
           </div>
           <span className="text-xl font-bold text-slate-900 hidden sm:block">AskNeighbor</span>
         </Link>
+
+        {community && myCommunities.length > 0 && (
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 text-primary-700 rounded-lg text-sm font-medium hover:bg-primary-100 transition-colors"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline max-w-[140px] truncate">{community.name}</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+            {showDropdown && (
+              <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-50">
+                <p className="px-3 py-1.5 text-xs font-medium text-slate-400 uppercase">My Communities</p>
+                {myCommunities.map((m) => (
+                  <button
+                    key={m.communities.id}
+                    onClick={() => { onSwitchCommunity(m.communities); setShowDropdown(false); }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-50 flex items-center justify-between ${community.id === m.communities.id ? 'text-primary-600 font-medium' : 'text-slate-700'}`}
+                  >
+                    <span>{m.communities.name}</span>
+                    {m.communities.city && <span className="text-xs text-slate-400">{m.communities.city}, {m.communities.state}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <form onSubmit={handleSearch} className="flex-1 max-w-md">
           <div className="relative">

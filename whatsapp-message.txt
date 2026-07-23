@@ -1,0 +1,44 @@
+Hello Everyone,
+
+I hope you're all doing well.
+
+As our community has grown, I've noticed that one of the most common things we do in this group is ask for recommendations — "Who's a good pediatrician?", "Anyone know a reliable handyman?", "Can someone suggest a tax consultant?"
+
+These are great conversations, and we've built up a lot of valuable knowledge over time. But the problem is — all these recommendations get lost in the chat. When someone needs a plumber six months later, they have to ask again because it's impossible to find the old message.
+
+To solve this, I've built a free app for our community called *AskNeighbor*.
+
+*What is AskNeighbor?*
+
+It's a private, invite-only recommendation directory built exclusively for our community. Think of it as a permanent, searchable version of all the recommendations we share here — organized by category and backed by ratings and reviews from people we actually know and trust.
+
+*Categories include:*
+Doctors & Medical | Home Services | Restaurants & Food | Education & Tutoring | Childcare | Legal & Financial | Auto Services | Beauty & Wellness | Pet Services | Cleaning Services | Real Estate | Technology
+
+*Key Features:*
+- Search by category, name, or location
+- Read reviews and ratings from community members
+- Save your favorite providers for quick access
+- Add new recommendations in under a minute
+- AI-powered: paste a WhatsApp recommendation message and it automatically extracts all the details
+
+*How to Get Started:*
+
+1. Open the app → https://frontend-six-lake-82.vercel.app
+
+2. Enter the invite code → MONROE2026
+
+3. Sign up with your name, email, and a password
+
+4. You're in! Browse existing recommendations or add your own
+
+*A Small Request:*
+
+The app is only as good as the recommendations we put into it. If you have even one provider you'd like to recommend — a doctor your family loves, a handyman who did a great job, a restaurant you keep going back to — please take a minute to add them.
+
+You can also forward any recommendation message from this chat, paste it into the app, and the AI will extract the provider name, phone number, category, and other details automatically. No need to type everything out.
+
+This is built for our community, by our community. The more we contribute, the more useful it becomes for all of us.
+
+Thank you,
+Senthil

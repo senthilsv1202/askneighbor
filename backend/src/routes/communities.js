@@ -40,6 +40,29 @@ router.get('/my', requireAuth, async (req, res) => {
   res.json(data);
 });
 
+router.get('/nearby', requireAuth, async (req, res) => {
+  const { data: memberships } = await req.supabase
+    .from('community_members')
+    .select('communities(state)')
+    .eq('user_id', req.user.id);
+
+  const states = [...new Set((memberships || []).map(m => m.communities?.state).filter(Boolean))];
+  if (states.length === 0) return res.json([]);
+
+  const { data, error } = await req.supabase
+    .from('communities')
+    .select('id, name, slug, city, state, zip_code, description')
+    .in('state', states)
+    .eq('is_active', true)
+    .order('name');
+
+  if (error) return res.status(500).json({ error: error.message });
+
+  const myIds = (memberships || []).map(m => m.communities?.id).filter(Boolean);
+  const nearby = (data || []).filter(c => !myIds.includes(c.id));
+  res.json(nearby);
+});
+
 router.get('/:id/members', requireAuth, async (req, res) => {
   const { data, error } = await req.supabase
     .from('community_members')

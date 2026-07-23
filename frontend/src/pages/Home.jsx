@@ -1,17 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Users, Star, Shield } from 'lucide-react';
+import { Search, Users, Star, Shield, MapPin, ArrowRight } from 'lucide-react';
 import { api } from '../lib/api.js';
 import CategoryCard from '../components/CategoryCard.jsx';
 
-export default function Home() {
+export default function Home({ user, community }) {
   const [categories, setCategories] = useState([]);
+  const [nearbyCommunities, setNearbyCommunities] = useState([]);
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
     api.getCategories().then(setCategories).catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (user && community) {
+      api.getNearbyCommunities().then(setNearbyCommunities).catch(() => {});
+    }
+  }, [user, community]);
 
   function handleSearch(e) {
     e.preventDefault();
@@ -27,12 +34,20 @@ export default function Home() {
           Find Trusted Local<br />
           <span className="text-primary-600">Recommendations</span>
         </h1>
-        <p className="text-lg text-slate-600 mb-8 max-w-2xl mx-auto">
-          Your community's go-to directory for doctors, handymen, restaurants, and more.
-          Real recommendations from real neighbors.
-        </p>
+        {community ? (
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <MapPin className="w-5 h-5 text-primary-500" />
+            <span className="text-lg text-slate-600">{community.name}</span>
+            {community.city && <span className="text-slate-400">— {community.city}, {community.state}</span>}
+          </div>
+        ) : (
+          <p className="text-lg text-slate-600 mb-8 max-w-2xl mx-auto">
+            Your community's go-to directory for doctors, handymen, restaurants, and more.
+            Real recommendations from real neighbors.
+          </p>
+        )}
 
-        <form onSubmit={handleSearch} className="max-w-xl mx-auto">
+        <form onSubmit={handleSearch} className="max-w-xl mx-auto mb-4">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
@@ -57,6 +72,24 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {nearbyCommunities.length > 0 && (
+        <section className="mb-12 bg-white rounded-2xl border border-slate-200 p-6">
+          <h2 className="text-xl font-bold text-slate-900 mb-1">Nearby Communities</h2>
+          <p className="text-sm text-slate-500 mb-4">Browse recommendations from communities near you</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {nearbyCommunities.map((c) => (
+              <div key={c.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                <div>
+                  <p className="font-medium text-slate-900">{c.name}</p>
+                  <p className="text-sm text-slate-500">{c.city}{c.state ? `, ${c.state}` : ''}</p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-slate-400" />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="grid sm:grid-cols-3 gap-6 py-12 border-t border-slate-200">
         <div className="text-center">
