@@ -11,6 +11,7 @@ import SearchResults from './pages/SearchResults.jsx';
 import Auth from './pages/Auth.jsx';
 import Favorites from './pages/Favorites.jsx';
 import Privacy from './pages/Privacy.jsx';
+import CreateCommunity from './pages/CreateCommunity.jsx';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -69,6 +70,7 @@ export default function App() {
           <Route path="/auth" element={<Auth />} />
           <Route path="/favorites" element={user ? <Favorites /> : <Auth />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/create-community" element={user ? <CreateCommunity /> : <Auth />} />
         </Routes>
       </main>
     </div>

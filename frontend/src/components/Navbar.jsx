@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Plus, Heart, LogOut, Users, ChevronDown, MapPin } from 'lucide-react';
+import { Search, Plus, Heart, LogOut, Users, ChevronDown, MapPin, PlusCircle } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase.js';
 
@@ -58,6 +58,15 @@ export default function Navbar({ user, community, myCommunities, onSwitchCommuni
                     {m.communities.city && <span className="text-xs text-slate-400">{m.communities.city}, {m.communities.state}</span>}
                   </button>
                 ))}
+                <div className="border-t border-slate-100 mt-1 pt-1">
+                  <Link
+                    to="/create-community"
+                    onClick={() => setShowDropdown(false)}
+                    className="w-full text-left px-3 py-2 text-sm text-primary-600 hover:bg-primary-50 flex items-center gap-2"
+                  >
+                    <PlusCircle className="w-4 h-4" /> Create New Community
+                  </Link>
+                </div>
               </div>
             )}
           </div>
