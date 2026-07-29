@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Search, Users, Star, Shield, MapPin, ArrowRight } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Search, Users, Star, Shield, MapPin, ArrowRight, PlusCircle, X, MessageSquare, Heart, Sparkles, HelpCircle } from 'lucide-react';
 import { api } from '../lib/api.js';
 import CategoryCard from '../components/CategoryCard.jsx';
 
@@ -8,10 +8,13 @@ export default function Home({ user, community }) {
   const [categories, setCategories] = useState([]);
   const [nearbyCommunities, setNearbyCommunities] = useState([]);
   const [query, setQuery] = useState('');
+  const [showGuide, setShowGuide] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     api.getCategories().then(setCategories).catch(console.error);
+    const seen = localStorage.getItem('askneighbor_guide_seen');
+    if (!seen) setShowGuide(true);
   }, []);
 
   useEffect(() => {
@@ -27,25 +30,94 @@ export default function Home({ user, community }) {
     }
   }
 
+  function dismissGuide() {
+    setShowGuide(false);
+    localStorage.setItem('askneighbor_guide_seen', 'true');
+  }
+
   return (
     <div>
-      <section className="text-center py-12">
+      {showGuide && (
+        <section className="mb-8 bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-6 text-white relative">
+          <button onClick={dismissGuide} className="absolute top-4 right-4 text-white/60 hover:text-white">
+            <X className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-2 mb-3">
+            <HelpCircle className="w-5 h-5" />
+            <h2 className="text-lg font-bold">Welcome to AskNeighbor!</h2>
+          </div>
+          <p className="text-white/90 text-sm mb-4">
+            Your private community directory for trusted local recommendations. Here's how it works:
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="bg-white/15 rounded-xl p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Search className="w-4 h-4" />
+                <span className="font-semibold text-sm">Search</span>
+              </div>
+              <p className="text-xs text-white/80">Find doctors, handymen, restaurants by name, category, or location</p>
+            </div>
+            <div className="bg-white/15 rounded-xl p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <PlusCircle className="w-4 h-4" />
+                <span className="font-semibold text-sm">Recommend</span>
+              </div>
+              <p className="text-xs text-white/80">Add a provider you trust — or paste a WhatsApp message and AI fills the details</p>
+            </div>
+            <div className="bg-white/15 rounded-xl p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Star className="w-4 h-4" />
+                <span className="font-semibold text-sm">Rate & Review</span>
+              </div>
+              <p className="text-xs text-white/80">Share your experience so neighbors can make informed decisions</p>
+            </div>
+            <div className="bg-white/15 rounded-xl p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Heart className="w-4 h-4" />
+                <span className="font-semibold text-sm">Save Favorites</span>
+              </div>
+              <p className="text-xs text-white/80">Bookmark providers for quick access anytime you need them</p>
+            </div>
+          </div>
+          <p className="text-xs text-white/60 mt-3 text-center">This guide shows once. Click the <HelpCircle className="w-3 h-3 inline" /> icon anytime to see it again.</p>
+        </section>
+      )}
+
+      {user && (
+        <section className="mb-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {community && (
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-primary-50 border border-primary-200 rounded-xl">
+              <MapPin className="w-4 h-4 text-primary-500" />
+              <span className="text-sm font-semibold text-primary-700">{community.name}</span>
+              {community.city && <span className="text-xs text-slate-500">— {community.city}, {community.state}</span>}
+            </div>
+          )}
+          <Link
+            to="/create-community"
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-dashed border-primary-300 rounded-xl text-primary-600 hover:bg-primary-50 hover:border-primary-400 transition-colors"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span className="text-sm font-medium">Create New Community</span>
+            <span className="text-xs text-slate-400 hidden sm:inline">— start a directory for your neighborhood</span>
+          </Link>
+          {!showGuide && (
+            <button onClick={() => setShowGuide(true)} className="flex items-center gap-1.5 px-3 py-2.5 text-slate-400 hover:text-primary-600 transition-colors" title="How to use AskNeighbor">
+              <HelpCircle className="w-4 h-4" />
+              <span className="text-xs">Help</span>
+            </button>
+          )}
+        </section>
+      )}
+
+      <section className="text-center py-8">
         <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 mb-4">
           Find Trusted Local<br />
           <span className="text-primary-600">Recommendations</span>
         </h1>
-        {community ? (
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <MapPin className="w-5 h-5 text-primary-500" />
-            <span className="text-lg text-slate-600">{community.name}</span>
-            {community.city && <span className="text-slate-400">— {community.city}, {community.state}</span>}
-          </div>
-        ) : (
-          <p className="text-lg text-slate-600 mb-8 max-w-2xl mx-auto">
-            Your community's go-to directory for doctors, handymen, restaurants, and more.
-            Real recommendations from real neighbors.
-          </p>
-        )}
+        <p className="text-lg text-slate-600 mb-8 max-w-2xl mx-auto">
+          Your community's go-to directory for doctors, handymen, restaurants, and more.
+          Real recommendations from real neighbors.
+        </p>
 
         <form onSubmit={handleSearch} className="max-w-xl mx-auto mb-4">
           <div className="relative">
