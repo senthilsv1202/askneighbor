@@ -20,6 +20,14 @@
     <meta name="twitter:title" content="AskNeighbor — Trusted Local Recommendations" />
     <meta name="twitter:description" content="Find trusted local service providers recommended by your neighbors. Private, invite-only community directory." />
 
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2563EB" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="AskNeighbor" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
     <!-- Canonical URL -->
     <link rel="canonical" href="https://askneighbor.org/" />
 
@@ -55,5 +63,12 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
   </body>
 </html>
