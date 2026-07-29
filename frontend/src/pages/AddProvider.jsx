@@ -32,8 +32,18 @@ export default function AddProvider({ community }) {
     }).catch(console.error);
   }, []);
 
+  function formatPhone(value) {
+    const digits = value.replace(/\D/g, '').slice(0, 10);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+
   function updateField(field) {
-    return (e) => setForm({ ...form, [field]: e.target.value });
+    return (e) => {
+      const value = field === 'phone' ? formatPhone(e.target.value) : e.target.value;
+      setForm({ ...form, [field]: value });
+    };
   }
 
   function categoryIdByName(name) {
