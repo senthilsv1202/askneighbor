@@ -1,34 +1,8 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
+import { maskProviders } from '../lib/mask.js';
 
 const router = Router();
-
-function maskPhone(phone) {
-  if (!phone) return null;
-  const digits = phone.replace(/\D/g, '');
-  if (digits.length >= 10) {
-    return `(***) ***-${digits.slice(-4)}`;
-  }
-  if (digits.length >= 4) {
-    return `***-${digits.slice(-4)}`;
-  }
-  return '***';
-}
-
-function maskEmail(email) {
-  if (!email) return null;
-  const [local, domain] = email.split('@');
-  if (!domain) return '***';
-  return `${local.slice(0, 2)}***@${domain}`;
-}
-
-function maskProviders(providers) {
-  return providers.map(p => ({
-    ...p,
-    phone: maskPhone(p.phone),
-    email: maskEmail(p.email),
-  }));
-}
 
 // List providers — requires auth, returns masked contact info
 router.get('/', requireAuth, async (req, res) => {

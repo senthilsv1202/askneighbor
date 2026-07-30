@@ -66,7 +66,7 @@ export default function App() {
           <Route path="/category/:slug" element={<CategoryPage user={user} community={community} />} />
           <Route path="/provider/:id" element={<ProviderPage user={user} />} />
           <Route path="/add" element={user ? <AddProvider community={community} /> : <Auth />} />
-          <Route path="/search" element={<SearchResults community={community} />} />
+          <Route path="/search" element={<SearchResults community={community} user={user} />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/favorites" element={user ? <Favorites /> : <Auth />} />
           <Route path="/privacy" element={<Privacy />} />

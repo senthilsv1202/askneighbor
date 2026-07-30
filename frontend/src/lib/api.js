@@ -21,7 +21,10 @@ async function request(path, options = {}) {
 }
 
 const liveApi = {
-  getCategories: () => request('/api/categories'),
+  getCategories: (params) => {
+    const qs = new URLSearchParams(params || {}).toString();
+    return request(`/api/categories${qs ? `?${qs}` : ''}`);
+  },
   getCategory: (slug) => request(`/api/categories/${slug}`),
   getProviders: (params) => {
     const qs = new URLSearchParams(params).toString();
@@ -42,6 +45,8 @@ const liveApi = {
   generateInvite: (data) => request('/api/invites/generate', { method: 'POST', body: JSON.stringify(data) }),
   getNearbyCommunities: () => request('/api/communities/nearby'),
   getCommunityMembers: (id) => request(`/api/communities/${id}/members`),
+  getCommunityActivity: (id) => request(`/api/communities/${id}/activity`),
+  aiSearch: (body) => request('/api/search/ai', { method: 'POST', body: JSON.stringify(body) }),
   parseMessage: (message) => request('/api/parse/message', { method: 'POST', body: JSON.stringify({ message }) }),
   parseChatExport: (text) => request('/api/parse/chat-export', { method: 'POST', body: JSON.stringify({ text }) }),
 };

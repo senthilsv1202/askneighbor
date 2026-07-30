@@ -96,7 +96,12 @@ export const demoProviders = [
 ];
 
 export const demoApi = {
-  getCategories: () => Promise.resolve(demoCategories),
+  getCategories: () => Promise.resolve(
+    demoCategories.map((c) => ({
+      ...c,
+      provider_count: demoProviders.filter((p) => p.category_id === c.id).length,
+    }))
+  ),
   getCategory: (slug) => Promise.resolve(demoCategories.find((c) => c.slug === slug) || null),
   getProviders: (params) => {
     let filtered = [...demoProviders];
@@ -142,6 +147,37 @@ export const demoApi = {
     { id: 'c3', name: 'East Brunswick Community', city: 'East Brunswick', state: 'NJ' },
   ]),
   getCommunityMembers: () => Promise.resolve([]),
+  getCommunityActivity: () => Promise.resolve({
+    events: [
+      { type: 'recommendation', id: 'a1', provider_id: 'p3', provider_name: "Mike's Handyman Services", category: 'Home Services', actor: 'Anita', created_at: '2025-07-28T10:00:00Z' },
+      { type: 'review', id: 'a2', provider_id: 'p1', provider_name: 'Dr. Priya Sharma', rating: 5, title: 'Best pediatrician!', actor: 'Raj', created_at: '2025-07-27T15:30:00Z' },
+      { type: 'recommendation', id: 'a3', provider_id: 'p7', provider_name: 'Bright Minds Tutoring', category: 'Education & Tutoring', actor: 'Sarah', created_at: '2025-07-26T09:15:00Z' },
+      { type: 'review', id: 'a4', provider_id: 'p5', provider_name: 'Kumar Tax & Accounting', rating: 5, title: 'Very thorough', actor: 'David', created_at: '2025-07-25T18:45:00Z' },
+    ],
+    new_this_week: 2,
+  }),
+  aiSearch: ({ q }) => {
+    const lower = (q || '').toLowerCase();
+    const matched = demoProviders.filter((p) =>
+      p.name.toLowerCase().includes(lower) ||
+      (p.description || '').toLowerCase().includes(lower) ||
+      (p.services || []).some((s) => s.toLowerCase().includes(lower))
+    );
+    const providers = matched.length > 0 ? matched : demoProviders.slice(0, 3);
+    return Promise.resolve({
+      ai: {
+        answer: 'This is a demo of AI search. Connect your Anthropic API key to get real answers grounded in your community\'s reviews.',
+        gap: null,
+        matches: providers.slice(0, 3).map((p) => ({
+          id: p.id,
+          why: `Neighbors rate ${p.name} ${p.avg_rating} across ${p.review_count} reviews.`,
+          caveat: null,
+        })),
+      },
+      filters: null,
+      providers,
+    });
+  },
   parseMessage: (message) => {
     return Promise.resolve({
       providers: [{

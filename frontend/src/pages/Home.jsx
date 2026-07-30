@@ -3,23 +3,32 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Search, Users, Star, Shield, MapPin, ArrowRight, PlusCircle, X, MessageSquare, Heart, Sparkles, HelpCircle } from 'lucide-react';
 import { api } from '../lib/api.js';
 import CategoryCard from '../components/CategoryCard.jsx';
+import ActivityFeed from '../components/ActivityFeed.jsx';
 
 export default function Home({ user, community }) {
   const [categories, setCategories] = useState([]);
   const [nearbyCommunities, setNearbyCommunities] = useState([]);
+  const [activity, setActivity] = useState(null);
   const [query, setQuery] = useState('');
   const [showGuide, setShowGuide] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    api.getCategories().then(setCategories).catch(console.error);
     const seen = localStorage.getItem('askneighbor_guide_seen');
     if (!seen) setShowGuide(true);
   }, []);
 
+  // Counts are only meaningful once scoped to a community, so refetch when it resolves.
+  useEffect(() => {
+    api.getCategories(community?.id ? { community_id: community.id } : undefined)
+      .then(setCategories)
+      .catch(console.error);
+  }, [community]);
+
   useEffect(() => {
     if (user && community) {
       api.getNearbyCommunities().then(setNearbyCommunities).catch(() => {});
+      api.getCommunityActivity(community.id).then(setActivity).catch(() => {});
     }
   }, [user, community]);
 
@@ -111,26 +120,31 @@ export default function Home({ user, community }) {
 
       <section className="text-center py-8">
         <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 mb-4">
-          Find Trusted Local<br />
-          <span className="text-primary-600">Recommendations</span>
+          Stop asking WhatsApp<br />
+          <span className="text-primary-600">the same question.</span>
         </h1>
         <p className="text-lg text-slate-600 mb-8 max-w-2xl mx-auto">
-          Your community's go-to directory for doctors, handymen, restaurants, and more.
-          Real recommendations from real neighbors.
+          {user
+            ? 'Ask in your own words — answers come from your neighbors’ own recommendations.'
+            : 'The best pediatrician, the handyman who actually shows up, the CPA who knows H-1B taxes — your community has already recommended them all. AskNeighbor keeps those answers searchable instead of buried in six months of chat history.'}
         </p>
 
-        <form onSubmit={handleSearch} className="max-w-xl mx-auto mb-4">
+        <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-3">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Try 'pediatrician near Monroe Township' or 'plumber'..."
-              className="w-full pl-12 pr-4 py-4 bg-white border-2 border-slate-200 rounded-2xl text-base focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm"
+              placeholder="Try 'a pediatrician who takes Aetna and is good with newborns'"
+              className="w-full pl-14 pr-4 py-5 bg-white border-2 border-slate-200 rounded-2xl text-base focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm"
             />
           </div>
         </form>
+        <p className="flex items-center justify-center gap-1.5 text-sm text-slate-500">
+          <Sparkles className="w-4 h-4 text-primary-500" />
+          Ask in a full sentence — AI reads your neighbors' reviews to answer.
+        </p>
       </section>
 
       <section className="mb-12">
@@ -144,6 +158,8 @@ export default function Home({ user, community }) {
           ))}
         </div>
       </section>
+
+      <ActivityFeed events={activity?.events} newThisWeek={activity?.new_this_week} />
 
       {nearbyCommunities.length > 0 && (
         <section className="mb-12 bg-white rounded-2xl border border-slate-200 p-6">

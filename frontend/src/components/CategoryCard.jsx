@@ -38,6 +38,8 @@ const colorMap = {
 export default function CategoryCard({ category }) {
   const Icon = iconMap[category.icon] || Folder;
   const colors = colorMap[category.icon] || 'bg-slate-100 text-slate-600';
+  // Only present once counts are scoped to a community — undefined means "don't show".
+  const count = typeof category.provider_count === 'number' ? category.provider_count : null;
 
   return (
     <Link
@@ -51,6 +53,13 @@ export default function CategoryCard({ category }) {
         <h3 className="text-sm font-semibold text-slate-800">{category.name}</h3>
         {category.description && (
           <p className="text-xs text-slate-500 mt-1 line-clamp-2">{category.description}</p>
+        )}
+        {count !== null && (
+          <p className={`text-xs font-medium mt-2 ${count === 0 ? 'text-slate-400' : 'text-primary-600'}`}>
+            {count === 0
+              ? 'None yet — add the first'
+              : `${count} ${count === 1 ? 'recommendation' : 'recommendations'}`}
+          </p>
         )}
       </div>
     </Link>
