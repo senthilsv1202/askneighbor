@@ -23,11 +23,26 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
+// Railway terminates TLS and forwards requests, so without this every request
+// looks like it came from the proxy: express-rate-limit then applied one shared
+// 200-request bucket to the entire community instead of one per client, and logged
+// ERR_ERL_UNEXPECTED_X_FORWARDED_FOR. Trust exactly one hop — using `true` would
+// let a client spoof X-Forwarded-For and bypass the limit entirely.
+app.set('trust proxy', 1);
+
 app.use(helmet());
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173').split(',').map(s => s.trim());
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
+
+// These two routes each spend an Anthropic API call per request, so they get a
+// tighter budget than general browsing to bound both cost and abuse.
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 40,
+  message: { error: 'Too many AI requests. Please wait a few minutes and try again.' },
+});
 
 app.use((req, _res, next) => {
   req.supabase = supabase;
@@ -40,8 +55,8 @@ app.use('/api/reviews', reviewsRouter);
 app.use('/api/favorites', favoritesRouter);
 app.use('/api/communities', communitiesRouter);
 app.use('/api/invites', invitesRouter);
-app.use('/api/parse', parseRouter);
-app.use('/api/search', searchRouter);
+app.use('/api/parse', aiLimiter, parseRouter);
+app.use('/api/search', aiLimiter, searchRouter);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 

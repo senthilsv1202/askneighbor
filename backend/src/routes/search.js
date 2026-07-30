@@ -6,13 +6,22 @@ import { resolveCommunityIds } from '../lib/scope.js';
 
 const router = Router();
 
-const MODEL = 'claude-sonnet-4-6';
+// Ranking drives answer quality, so it stays on Sonnet: Haiku was measured 3x
+// faster but padded results with bad matches (it suggested an ENT for "eye doctor").
+// Filter extraction is mechanical JSON, so Haiku is fine there and ~1.4s quicker.
+const MODEL_RANK = 'claude-sonnet-4-6';
+const MODEL_FAST = 'claude-haiku-4-5';
 
 // Candidates pulled from the DB before Claude ranks them. Kept small so the
 // ranking prompt stays cheap — Claude only ever sees a digest, never contact info.
 const CANDIDATE_LIMIT = 25;
 const RANKED_LIMIT = 3;
 const REVIEWS_PER_PROVIDER = 4;
+
+// A directory this size or smaller fits in one prompt, so we skip the separate
+// filter-extraction call entirely and let the ranking call do the interpreting.
+// That removes a whole sequential round trip (~2.3s measured) from the common case.
+const SINGLE_CALL_MAX = 60;
 
 const CATEGORY_SLUGS = [
   'doctors', 'home-services', 'auto', 'education', 'childcare', 'food',
@@ -50,7 +59,7 @@ function sanitizeFilters(raw) {
 
 async function extractFilters(client, query) {
   const response = await client.messages.create({
-    model: MODEL,
+    model: MODEL_FAST,
     max_tokens: 512,
     messages: [{
       role: 'user',
@@ -99,8 +108,11 @@ function toDigest(providers, reviewsByProvider) {
 
 async function rankAndSummarize(client, query, intent, digest) {
   const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 1024,
+    model: MODEL_RANK,
+    // Output length is the single biggest driver of latency here: 432 tokens took
+    // ~8.9s versus ~5.4s for 204. The word limits below are a speed measure, not
+    // just a style preference — keep them tight.
+    max_tokens: 500,
     messages: [{
       role: 'user',
       content: `A neighbor searched: "${query}"${intent ? `\nWhat they need: ${intent}` : ''}
@@ -109,16 +121,25 @@ Below are provider records from their community directory, including reviews nei
 
 Return only JSON:
 {
-  "answer": "2-3 sentences answering the neighbor directly, in a warm neighborly tone",
+  "answer": "answer the neighbor directly, warm and neighborly, MAX 25 WORDS",
   "matches": [
     {
       "id": "provider id",
-      "why": "one sentence on why neighbors recommend them, grounded in their reviews",
-      "caveat": "an honest downside mentioned in reviews, or null"
+      "why": "why neighbors recommend them, grounded in their reviews, MAX 15 WORDS",
+      "caveat": "an honest downside mentioned in reviews, MAX 12 WORDS, or null"
     }
   ],
-  "gap": "if nothing genuinely fits, one sentence saying so and suggesting they ask the community — otherwise null"
+  "gap": "if nothing genuinely fits, one short sentence saying so and suggesting they ask the community — otherwise null"
 }
+
+Respect the word limits strictly — brevity matters more than completeness.
+
+Critical consistency rules:
+- Every provider you refer to in "answer" MUST also appear in "matches". Never
+  mention someone helpful and then leave matches empty.
+- If any provider is even partially relevant, list it in matches with an honest
+  caveat rather than returning no matches.
+- Set "gap" to a non-null string ONLY when matches is empty.
 
 Rules:
 - Never invent facts, ratings, or reviews that are not below.
@@ -205,6 +226,105 @@ async function matchCategoryIds(supabase, terms) {
     .map(c => c.id);
 }
 
+const PROVIDER_SELECT =
+  '*, categories!inner(name, slug, icon), communities(id, name, slug, city, state)';
+
+// Returns the full scoped directory, or null when it is too large to reason about
+// in a single prompt (in which case the caller falls back to extract-then-filter).
+async function loadWholeDirectory(supabase, communityIds) {
+  let q = supabase
+    .from('providers')
+    .select(PROVIDER_SELECT)
+    .order('avg_rating', { ascending: false })
+    .limit(SINGLE_CALL_MAX + 1);
+
+  if (communityIds) q = q.in('community_id', communityIds);
+
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  if (!data || data.length > SINGLE_CALL_MAX) return null;
+  return data;
+}
+
+// Keyword overlap against the fields a neighbor would actually be matching on.
+// Used to decide which unranked providers are worth showing as "other results" —
+// without it, a query like "scuba instructor" would list the whole directory.
+function locallyRelevant(providers, query) {
+  const terms = significantTerms(query);
+  if (terms.length === 0) return [];
+  return providers.filter(p => {
+    const haystack = [
+      p.name, p.description, p.city,
+      (p.services || []).join(' '),
+      p.categories?.name,
+    ].filter(Boolean).join(' ').toLowerCase();
+    return terms.some(t => haystack.includes(t));
+  });
+}
+
+async function answerFromWholeDirectory(supabase, client, query, providers) {
+  if (providers.length === 0) {
+    return {
+      ai: {
+        answer: null,
+        gap: 'No one in your community has recommended anyone yet. Be the first to add a recommendation.',
+        matches: [],
+      },
+      filters: null,
+      providers: [],
+    };
+  }
+
+  const { data: reviews } = await supabase
+    .from('reviews')
+    .select('provider_id, rating, title, body, created_at')
+    .in('provider_id', providers.map(p => p.id))
+    .order('created_at', { ascending: false });
+
+  const reviewsByProvider = {};
+  for (const r of reviews || []) {
+    const bucket = (reviewsByProvider[r.provider_id] ||= []);
+    if (bucket.length < REVIEWS_PER_PROVIDER) bucket.push(r);
+  }
+
+  // No intent is passed: with the whole directory in the prompt, this single call
+  // does the interpreting that extractFilters would otherwise have done.
+  const summary = await rankAndSummarize(
+    client, query, null, toDigest(providers, reviewsByProvider)
+  );
+
+  const byId = new Map(providers.map(p => [p.id, p]));
+  const matches = (summary.matches || [])
+    .filter(m => byId.has(m.id))
+    .slice(0, RANKED_LIMIT);
+  const matchIds = new Set(matches.map(m => m.id));
+
+  const ranked = matches.map(m => byId.get(m.id));
+  const rest = locallyRelevant(providers, query).filter(p => !matchIds.has(p.id));
+
+  // Enforced invariant: never pair an encouraging answer with an empty result list.
+  // The model sometimes names a helpful provider in prose but omits it from matches,
+  // which rendered as "there's a plumber who can help" above zero results.
+  if (ranked.length === 0 && rest.length === 0) {
+    return {
+      ai: {
+        answer: null,
+        gap: summary.gap
+          || 'No one in your community has recommended anyone for this yet. Be the first to add a recommendation.',
+        matches: [],
+      },
+      filters: null,
+      providers: [],
+    };
+  }
+
+  return {
+    ai: { answer: summary.answer || null, gap: summary.gap || null, matches },
+    filters: null,
+    providers: maskProviders([...ranked, ...rest]),
+  };
+}
+
 router.post('/ai', requireAuth, async (req, res) => {
   const { q, community_id, nearby } = req.body;
   if (!q || q.trim().length < 3) {
@@ -223,6 +343,17 @@ router.post('/ai', requireAuth, async (req, res) => {
   const client = new Anthropic({ apiKey });
 
   try {
+    // Fast path: try to load the entire scoped directory in one query. Most
+    // communities are small enough to fit in a single prompt, which lets us skip
+    // the separate filter-extraction call and its sequential round trip.
+    const whole = await loadWholeDirectory(req.supabase, communityIds);
+
+    if (whole) {
+      return res.json(await answerFromWholeDirectory(
+        req.supabase, client, query, whole
+      ));
+    }
+
     const filters = await extractFilters(client, query);
     const hasStructuredFilter = Boolean(filters.category || filters.city || filters.zip_code);
 
