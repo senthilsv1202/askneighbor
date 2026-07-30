@@ -20,6 +20,15 @@
     <meta name="twitter:title" content="AskNeighbor — Trusted Local Recommendations" />
     <meta name="twitter:description" content="Find trusted local service providers recommended by your neighbors. Private, invite-only community directory." />
 
+    <!-- Favicon — SVG for modern browsers, PNG fallback for the rest.
+         Note: vercel.json rewrites every unmatched path to index.html, so a
+         missing icon returns HTML with a 200 and the browser silently falls
+         back to its default globe. These files must exist in public/. -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png" />
+    <link rel="mask-icon" href="/favicon.svg" color="#2563eb" />
+
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#2563EB" />
