@@ -183,6 +183,11 @@ export const demoApi = {
       providers,
     });
   },
+  getEvents: () => Promise.resolve({ upcoming: [], past: [] }),
+  getEvent: () => Promise.resolve({ event: null, photos: [] }),
+  createEvent: () => Promise.reject(new Error('Connect Supabase to enable events')),
+  uploadEventPhoto: () => Promise.reject(new Error('Connect Supabase to enable events')),
+  deleteEventPhoto: () => Promise.reject(new Error('Connect Supabase to enable events')),
   parseMessage: (message) => {
     return Promise.resolve({
       providers: [{

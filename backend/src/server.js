@@ -13,6 +13,7 @@ import invitesRouter from './routes/invites.js';
 import parseRouter from './routes/parse.js';
 import searchRouter from './routes/search.js';
 import listingsRouter from './routes/listings.js';
+import eventsRouter from './routes/events.js';
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use(cors({ origin: allowedOrigins }));
 // global parser and scoped to this one route, so the larger ceiling is not exposed
 // on every endpoint; body-parser skips a body that has already been parsed.
 app.use('/api/parse/image', express.json({ limit: '8mb' }));
+app.use('/api/events', express.json({ limit: '8mb' }));   // event photo uploads
 app.use(express.json());
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
 
@@ -64,6 +66,7 @@ app.use('/api/parse', aiLimiter, parseRouter);
 app.use('/api/search', aiLimiter, searchRouter);
 // Posting and screening both spend an Anthropic call, so this shares the AI budget.
 app.use('/api/listings', aiLimiter, listingsRouter);
+app.use('/api/events', eventsRouter);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 

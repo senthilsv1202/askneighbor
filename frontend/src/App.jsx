@@ -13,6 +13,7 @@ import Favorites from './pages/Favorites.jsx';
 import Privacy from './pages/Privacy.jsx';
 import CreateCommunity from './pages/CreateCommunity.jsx';
 import Housing from './pages/Housing.jsx';
+import Events from './pages/Events.jsx';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -71,6 +72,7 @@ export default function App() {
           <Route path="/auth" element={<Auth />} />
           <Route path="/favorites" element={user ? <Favorites /> : <Auth />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/events" element={user ? <Events community={community} /> : <Auth />} />
           <Route path="/housing" element={user ? <Housing community={community} /> : <Auth />} />
           <Route path="/create-community" element={user ? <CreateCommunity /> : <Auth />} />
         </Routes>

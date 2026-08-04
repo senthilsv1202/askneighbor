@@ -59,6 +59,12 @@ const liveApi = {
   createListing: (data) => request('/api/listings', { method: 'POST', body: JSON.stringify(data) }),
   updateListing: (id, data) => request(`/api/listings/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   screenListing: (data) => request('/api/listings/screen', { method: 'POST', body: JSON.stringify(data) }),
+  getEvents: (community_id) => request(`/api/events?community_id=${community_id}`),
+  getEvent: (id) => request(`/api/events/${id}`),
+  createEvent: (data) => request('/api/events', { method: 'POST', body: JSON.stringify(data) }),
+  uploadEventPhoto: (id, image, media_type, caption) =>
+    request(`/api/events/${id}/photos`, { method: 'POST', body: JSON.stringify({ image, media_type, caption }) }),
+  deleteEventPhoto: (id, photoId) => request(`/api/events/${id}/photos/${photoId}`, { method: 'DELETE' }),
   parseMessage: (message) => request('/api/parse/message', { method: 'POST', body: JSON.stringify({ message }) }),
   parseImage: (image, media_type) => request('/api/parse/image', { method: 'POST', body: JSON.stringify({ image, media_type }) }),
   parseChatExport: (text) => request('/api/parse/chat-export', { method: 'POST', body: JSON.stringify({ text }) }),
