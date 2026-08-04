@@ -23,9 +23,11 @@ const REVIEWS_PER_PROVIDER = 4;
 // That removes a whole sequential round trip (~2.3s measured) from the common case.
 const SINGLE_CALL_MAX = 60;
 
+// Keep in sync with CATEGORIES in routes/parse.js and the seed list in schema.sql.
 const CATEGORY_SLUGS = [
   'doctors', 'home-services', 'auto', 'education', 'childcare', 'food',
   'legal', 'beauty', 'real-estate', 'pets', 'cleaning', 'technology',
+  'driving-schools',
 ];
 
 // Claude sometimes wraps JSON in a markdown fence despite being asked not to.

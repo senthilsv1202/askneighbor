@@ -236,5 +236,8 @@ INSERT INTO categories (name, slug, icon, description, sort_order) VALUES
   ('Real Estate',           'real-estate',  'home',          'Realtors, mortgage brokers, movers, storage',                 9),
   ('Pet Services',          'pets',         'paw-print',     'Vets, groomers, pet sitters, trainers',                      10),
   ('Cleaning Services',     'cleaning',     'spray-can',     'House cleaning, carpet cleaning, pressure washing',          11),
-  ('Technology',            'technology',   'monitor',       'IT support, computer repair, web designers, phone repair',    12)
+  ('Technology',            'technology',   'monitor',       'IT support, computer repair, web designers, phone repair',    12),
+  -- Descriptions double as a synonym list: search.js matches queries against
+  -- category name + description, so keep them phrase-rich.
+  ('Driving Schools',       'driving-schools', 'traffic-cone', 'Driving instructors, behind the wheel training, road test prep, permit classes, defensive driving', 13)
 ON CONFLICT (slug) DO NOTHING;

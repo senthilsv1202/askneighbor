@@ -4,10 +4,13 @@ import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
+// Keep in sync with CATEGORY_SLUGS in routes/search.js and the seed list in
+// schema.sql — the category set is currently duplicated across both.
 const CATEGORIES = [
   'Doctors & Medical', 'Home Services', 'Auto Services', 'Education & Tutoring',
   'Childcare', 'Restaurants & Food', 'Legal & Financial', 'Beauty & Wellness',
-  'Real Estate', 'Pet Services', 'Cleaning Services', 'Technology'
+  'Real Estate', 'Pet Services', 'Cleaning Services', 'Technology',
+  'Driving Schools'
 ];
 
 router.post('/message', requireAuth, async (req, res) => {

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import {
   Stethoscope, Wrench, Car, GraduationCap, Baby, Utensils,
-  Scale, Sparkles, Home, PawPrint, SprayCan, Monitor, Folder
+  Scale, Sparkles, Home, PawPrint, SprayCan, Monitor, TrafficCone, Folder
 } from 'lucide-react';
 
 const iconMap = {
@@ -17,6 +17,7 @@ const iconMap = {
   'paw-print': PawPrint,
   'spray-can': SprayCan,
   monitor: Monitor,
+  'traffic-cone': TrafficCone,
   folder: Folder,
 };
 
@@ -33,6 +34,8 @@ const colorMap = {
   'paw-print': 'bg-amber-50 text-amber-700',
   'spray-can': 'bg-cyan-50 text-cyan-600',
   monitor: 'bg-slate-100 text-slate-600',
+  // Distinct from auto's blue so driving instruction reads as its own thing.
+  'traffic-cone': 'bg-teal-50 text-teal-600',
 };
 
 export default function CategoryCard({ category }) {

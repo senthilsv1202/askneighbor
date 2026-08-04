@@ -11,6 +11,7 @@ export const demoCategories = [
   { id: '10', name: 'Pet Services', slug: 'pets', icon: 'paw-print', description: 'Vets, groomers, pet sitters, trainers', sort_order: 10 },
   { id: '11', name: 'Cleaning Services', slug: 'cleaning', icon: 'spray-can', description: 'House cleaning, carpet cleaning, pressure washing', sort_order: 11 },
   { id: '12', name: 'Technology', slug: 'technology', icon: 'monitor', description: 'IT support, computer repair, web designers, phone repair', sort_order: 12 },
+  { id: '13', name: 'Driving Schools', slug: 'driving-schools', icon: 'traffic-cone', description: 'Driving instructors, behind the wheel training, road test prep, permit classes, defensive driving', sort_order: 13 },
 ];
 
 export const demoProviders = [
