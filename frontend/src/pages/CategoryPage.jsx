@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, SlidersHorizontal, Plus, MessageSquare, Sparkles, Loader2, X, ChevronDown } from 'lucide-react';
+import { ChevronRight, SlidersHorizontal, Plus, MessageSquare, Sparkles, Loader2, X, ChevronDown, ImageIcon, AlertCircle } from 'lucide-react';
 import { api } from '../lib/api.js';
 import ProviderCard from '../components/ProviderCard.jsx';
+import { downscaleToBase64 } from '../lib/image.js';
 
 const UNGROUPED = 'Other';
 
@@ -51,6 +52,7 @@ export default function CategoryPage({ user, community }) {
   const [whatsappText, setWhatsappText] = useState('');
   const [parsing, setParsing] = useState(false);
   const [parseError, setParseError] = useState('');
+  const [missing, setMissing] = useState([]);
   const [form, setForm] = useState({
     name: '', phone: '', email: '', website: '',
     address: '', city: '', state: '', zip_code: '', description: '',
@@ -92,6 +94,38 @@ export default function CategoryPage({ user, community }) {
       const value = field === 'phone' ? formatPhone(e.target.value) : e.target.value;
       setForm({ ...form, [field]: value });
     };
+  }
+
+  async function parseScreenshot(file) {
+    if (!file) return;
+    setParsing(true);
+    setParseError('');
+    setMissing([]);
+    try {
+      const { base64, media_type } = await downscaleToBase64(file);
+      const { provider: p } = await api.parseImage(base64, media_type);
+      setForm({
+        name: p.name || '',
+        phone: p.phone || '',
+        email: p.email || '',
+        website: p.website || '',
+        address: p.address || '',
+        city: p.city || '',
+        state: p.state || '',
+        zip_code: p.zip_code || '',
+        description: (p.description || '') + (p.recommended_by ? ` Recommended by ${p.recommended_by}.` : ''),
+        services: (p.services || []).join(', '),
+        insurance_accepted: (p.insurance_accepted || []).join(', '),
+      });
+      // A shared contact card shows a name but hides the number, so say plainly
+      // what still needs typing rather than letting it be saved half-empty.
+      setMissing(Array.isArray(p.missing) ? p.missing : []);
+      setAddMode('form');
+    } catch (err) {
+      setParseError(err.message);
+    } finally {
+      setParsing(false);
+    }
   }
 
   async function parseWhatsApp() {
@@ -230,7 +264,34 @@ export default function CategoryPage({ user, community }) {
             >
               <MessageSquare className="w-3.5 h-3.5" /> Paste WhatsApp
             </button>
+            <label
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer transition-colors ${addMode === 'image' ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+            >
+              <ImageIcon className="w-3.5 h-3.5" /> Screenshot
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => { setAddMode('image'); parseScreenshot(e.target.files?.[0]); e.target.value = ''; }}
+              />
+            </label>
           </div>
+
+          {parsing && addMode === 'image' && (
+            <p className="flex items-center gap-2 text-sm text-slate-500 mb-4">
+              <Loader2 className="w-4 h-4 animate-spin" /> Reading the screenshot…
+            </p>
+          )}
+
+          {missing.length > 0 && (
+            <div className="flex gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
+              <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-800">
+                Read from the image. Still needs you: <span className="font-medium">{missing.join(', ')}</span>.
+                A shared contact card hides the number — tap it in WhatsApp to see it.
+              </p>
+            </div>
+          )}
 
           {addMode === 'paste' && (
             <div className="mb-5">

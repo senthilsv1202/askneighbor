@@ -34,6 +34,10 @@ app.set('trust proxy', 1);
 app.use(helmet());
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173').split(',').map(s => s.trim());
 app.use(cors({ origin: allowedOrigins }));
+// A base64 screenshot blows past express.json's 100kb default. Mounted before the
+// global parser and scoped to this one route, so the larger ceiling is not exposed
+// on every endpoint; body-parser skips a body that has already been parsed.
+app.use('/api/parse/image', express.json({ limit: '8mb' }));
 app.use(express.json());
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
 

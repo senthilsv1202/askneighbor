@@ -60,6 +60,7 @@ const liveApi = {
   updateListing: (id, data) => request(`/api/listings/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   screenListing: (data) => request('/api/listings/screen', { method: 'POST', body: JSON.stringify(data) }),
   parseMessage: (message) => request('/api/parse/message', { method: 'POST', body: JSON.stringify({ message }) }),
+  parseImage: (image, media_type) => request('/api/parse/image', { method: 'POST', body: JSON.stringify({ image, media_type }) }),
   parseChatExport: (text) => request('/api/parse/chat-export', { method: 'POST', body: JSON.stringify({ text }) }),
 };
 

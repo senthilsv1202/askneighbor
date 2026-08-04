@@ -71,6 +71,80 @@ ${message}
   }
 });
 
+// Screenshots are often the only way in: groups with Advanced Chat Privacy cannot
+// export, recommendations frequently arrive as images, and a shared contact card
+// hides the number until it is opened. Reading a screenshot sidesteps all three.
+router.post('/image', requireAuth, async (req, res) => {
+  const { image, media_type } = req.body;
+  if (!image) return res.status(400).json({ error: 'No image provided' });
+
+  const allowed = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+  const type = allowed.includes(media_type) ? media_type : 'image/png';
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: 'AI parsing is not configured' });
+
+  const client = new Anthropic({ apiKey });
+
+  try {
+    const response = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: type, data: image } },
+          {
+            type: 'text',
+            text: `This image is from a neighbourhood WhatsApp group — a screenshot of messages, a shared contact card, a business card or a flyer. Extract the service provider being recommended.
+
+Return only JSON:
+{
+  "name": "business or person recommended",
+  "category": "One of: ${CATEGORIES.join(', ')}",
+  "phone": "only if the digits are actually visible, otherwise null",
+  "email": null or email,
+  "website": null or website,
+  "address": null or address,
+  "city": null or city,
+  "state": null or two-letter state,
+  "description": "one or two sentences on why they were recommended, based only on what the image says",
+  "services": ["services mentioned"],
+  "recommended_by": "first name of whoever recommended them, if shown",
+  "missing": ["fields a person still needs to fill in by hand"]
+}
+
+Critical: never guess or invent a phone number. A WhatsApp contact card shows a
+name but hides the number, so if no digits are visible return null for phone and
+include "phone number" in "missing".
+If the image contains no recommendation, return {"error": "No recommendation found in this image"}.`
+          },
+        ],
+      }],
+    });
+
+    const parsed = JSON.parse(response.content[0].text.trim()
+      .replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, ''));
+
+    if (parsed.error) return res.status(422).json({ error: parsed.error });
+    res.json({ provider: parsed });
+  } catch (err) {
+    if (err instanceof SyntaxError) {
+      return res.status(500).json({ error: 'Could not read that image. Try a clearer screenshot.' });
+    }
+    // A rejected image (corrupt, unsupported format, too small) comes back as a
+    // 400 from the API. Surfacing that raw JSON to someone uploading a photo is
+    // useless, so translate it into something actionable.
+    if (err.status === 400) {
+      return res.status(422).json({
+        error: 'That image could not be read. Try a PNG or JPEG screenshot of the message.',
+      });
+    }
+    console.error('Image parse failed:', err.message);
+    res.status(500).json({ error: 'Could not read that image. Please try again.' });
+  }
+});
+
 router.post('/chat-export', requireAuth, async (req, res) => {
   const { text } = req.body;
   if (!text || text.trim().length < 20) {

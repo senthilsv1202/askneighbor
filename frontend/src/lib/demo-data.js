@@ -197,5 +197,6 @@ export const demoApi = {
       }]
     });
   },
+  parseImage: () => Promise.resolve({ provider: { name: 'Demo Provider from screenshot', category: 'Home Services', phone: null, description: 'Demo of screenshot reading. Connect an Anthropic API key for real extraction.', services: [], missing: ['phone number'] } }),
   parseChatExport: () => Promise.reject(new Error('Connect Supabase and Anthropic API to enable chat export parsing')),
 };
