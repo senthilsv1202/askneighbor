@@ -62,18 +62,35 @@ function cleanExport(raw) {
     .join('\n');
 }
 
-// Split on message boundaries so a recommendation is never cut in half.
+// Prefer to split on message boundaries so a recommendation is never cut in half.
 // WhatsApp lines start with a date like "12/03/2024, 9:15 pm - Name: text".
 const MESSAGE_START = /^\[?\d{1,2}[/.]\d{1,2}[/.]\d{2,4}[,\]]?\s/;
+// Text copied out of WhatsApp by hand has no date prefixes, so the boundary above
+// never matches and nothing would ever split. This is the backstop: past it, cut
+// wherever we are rather than sending one enormous request.
+const HARD_MAX = Math.floor(CHUNK_CHARS * 1.5);
 
 function chunk(text) {
-  const lines = text.split('\n');
+  // A single line can itself exceed the cap when a whole conversation is pasted
+  // as one blob, so break oversized lines up before grouping them.
+  const lines = [];
+  for (const line of text.split('\n')) {
+    if (line.length <= HARD_MAX) { lines.push(line); continue; }
+    for (let i = 0; i < line.length; i += CHUNK_CHARS) {
+      lines.push(line.slice(i, i + CHUNK_CHARS));
+    }
+  }
+
   const chunks = [];
   let current = [];
   let size = 0;
 
   for (const line of lines) {
-    if (size + line.length > CHUNK_CHARS && current.length && MESSAGE_START.test(line)) {
+    const next = size + line.length + 1;
+    const atBoundary = next > CHUNK_CHARS && MESSAGE_START.test(line);
+    const tooBig = next > HARD_MAX;
+
+    if (current.length && (atBoundary || tooBig)) {
       chunks.push(current.join('\n'));
       current = [];
       size = 0;
