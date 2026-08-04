@@ -13,8 +13,13 @@ async function request(path, options = {}) {
   const headers = { 'Content-Type': 'application/json', ...await authHeaders(), ...options.headers };
   const res = await fetch(`${API}${path}`, { ...options, headers });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || 'Request failed');
+    const body = await res.json().catch(() => ({ error: res.statusText }));
+    // Keep the payload on the error: a rejected listing carries its fair-housing
+    // findings, and a missing table carries setup_required.
+    const err = new Error(body.error || 'Request failed');
+    err.status = res.status;
+    err.body = body;
+    throw err;
   }
   if (res.status === 204) return null;
   return res.json();
@@ -47,6 +52,13 @@ const liveApi = {
   getCommunityMembers: (id) => request(`/api/communities/${id}/members`),
   getCommunityActivity: (id) => request(`/api/communities/${id}/activity`),
   aiSearch: (body) => request('/api/search/ai', { method: 'POST', body: JSON.stringify(body) }),
+  getListings: (params) => {
+    const qs = new URLSearchParams(params).toString();
+    return request(`/api/listings?${qs}`);
+  },
+  createListing: (data) => request('/api/listings', { method: 'POST', body: JSON.stringify(data) }),
+  updateListing: (id, data) => request(`/api/listings/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  screenListing: (data) => request('/api/listings/screen', { method: 'POST', body: JSON.stringify(data) }),
   parseMessage: (message) => request('/api/parse/message', { method: 'POST', body: JSON.stringify({ message }) }),
   parseChatExport: (text) => request('/api/parse/chat-export', { method: 'POST', body: JSON.stringify({ text }) }),
 };

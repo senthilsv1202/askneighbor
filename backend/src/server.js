@@ -12,6 +12,7 @@ import communitiesRouter from './routes/communities.js';
 import invitesRouter from './routes/invites.js';
 import parseRouter from './routes/parse.js';
 import searchRouter from './routes/search.js';
+import listingsRouter from './routes/listings.js';
 
 dotenv.config();
 
@@ -57,6 +58,8 @@ app.use('/api/communities', communitiesRouter);
 app.use('/api/invites', invitesRouter);
 app.use('/api/parse', aiLimiter, parseRouter);
 app.use('/api/search', aiLimiter, searchRouter);
+// Posting and screening both spend an Anthropic call, so this shares the AI budget.
+app.use('/api/listings', aiLimiter, listingsRouter);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 

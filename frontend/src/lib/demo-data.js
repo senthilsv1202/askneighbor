@@ -148,6 +148,10 @@ export const demoApi = {
     { id: 'c3', name: 'East Brunswick Community', city: 'East Brunswick', state: 'NJ' },
   ]),
   getCommunityMembers: () => Promise.resolve([]),
+  getListings: () => Promise.resolve({ listings: [] }),
+  createListing: () => Promise.reject(new Error('Connect Supabase to enable listings')),
+  updateListing: () => Promise.reject(new Error('Connect Supabase to enable listings')),
+  screenListing: () => Promise.resolve({ status: 'ok', issues: [], suggested_rewrite: null }),
   getCommunityActivity: () => Promise.resolve({
     events: [
       { type: 'recommendation', id: 'a1', provider_id: 'p3', provider_name: "Mike's Handyman Services", category: 'Home Services', actor: 'Anita', created_at: '2025-07-28T10:00:00Z' },

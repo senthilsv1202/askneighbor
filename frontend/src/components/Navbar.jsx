@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Plus, Heart, LogOut, Users, ChevronDown, MapPin, PlusCircle } from 'lucide-react';
+import { Search, Plus, Heart, LogOut, Users, ChevronDown, MapPin, PlusCircle, Home as HomeIcon } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase.js';
 
@@ -91,6 +91,9 @@ export default function Navbar({ user, community, myCommunities, onSwitchCommuni
               <Link to="/add" className="flex items-center gap-1.5 px-3 py-2 bg-primary-600 text-white rounded-xl text-sm font-medium hover:bg-primary-700 transition-colors">
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">Add</span>
+              </Link>
+              <Link to="/housing" title="Homes for sale or rent" className="p-2 text-slate-500 hover:text-primary-600 transition-colors">
+                <HomeIcon className="w-5 h-5" />
               </Link>
               <Link to="/favorites" className="p-2 text-slate-500 hover:text-primary-600 transition-colors">
                 <Heart className="w-5 h-5" />
