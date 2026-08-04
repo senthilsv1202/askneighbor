@@ -167,6 +167,13 @@ const STOPWORDS = new Set([
   'around', 'about', 'can', 'could', 'would', 'should', 'does', 'have', 'has',
   'get', 'got', 'take', 'takes', 'accepts', 'accept', 'from', 'his', 'her',
   'our', 'their', 'you', 'your', 'find',
+  // Generic business words. These appear inside category names and descriptions
+  // ("Home Services", "body shops"), so matching on them produced nonsense:
+  // "organic meat shop" resolved to Auto Services via "shops", and "tiffin
+  // service" hit four unrelated categories at once. The distinctive noun in a
+  // query carries the match, so dropping these costs nothing.
+  'shop', 'shops', 'store', 'stores', 'service', 'services',
+  'place', 'places', 'business', 'company', 'shopping',
 ]);
 
 function significantTerms(query) {

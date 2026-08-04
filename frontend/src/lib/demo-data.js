@@ -4,7 +4,7 @@ export const demoCategories = [
   { id: '3', name: 'Auto Services', slug: 'auto', icon: 'car', description: 'Mechanics, body shops, car wash, towing', sort_order: 3 },
   { id: '4', name: 'Education & Tutoring', slug: 'education', icon: 'graduation-cap', description: 'Tutors, music teachers, test prep, schools', sort_order: 4 },
   { id: '5', name: 'Childcare', slug: 'childcare', icon: 'baby', description: 'Babysitters, daycares, nannies, after-school programs', sort_order: 5 },
-  { id: '6', name: 'Restaurants & Food', slug: 'food', icon: 'utensils', description: 'Restaurants, grocery stores, catering, bakeries', sort_order: 6 },
+  { id: '6', name: 'Restaurants & Food', slug: 'food', icon: 'utensils', description: 'Restaurants, grocery stores, organic and halal meat, butchers, fish markets, fresh produce, tiffin and meal services, dairy and milk delivery, catering, bakeries and sweets', sort_order: 6 },
   { id: '7', name: 'Legal & Financial', slug: 'legal', icon: 'scale', description: 'Lawyers, CPAs, tax consultants, financial advisors', sort_order: 7 },
   { id: '8', name: 'Beauty & Wellness', slug: 'beauty', icon: 'sparkles', description: 'Salons, spas, gyms, yoga studios, therapists', sort_order: 8 },
   { id: '9', name: 'Real Estate', slug: 'real-estate', icon: 'home', description: 'Realtors, mortgage brokers, movers, storage', sort_order: 9 },

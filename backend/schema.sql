@@ -230,7 +230,7 @@ INSERT INTO categories (name, slug, icon, description, sort_order) VALUES
   ('Auto Services',         'auto',         'car',           'Mechanics, body shops, car wash, towing',                     3),
   ('Education & Tutoring',  'education',    'graduation-cap','Tutors, music teachers, test prep, schools',                  4),
   ('Childcare',             'childcare',    'baby',          'Babysitters, daycares, nannies, after-school programs',        5),
-  ('Restaurants & Food',    'food',         'utensils',      'Restaurants, grocery stores, catering, bakeries',              6),
+  ('Restaurants & Food',    'food',         'utensils',      'Restaurants, grocery stores, organic and halal meat, butchers, fish markets, fresh produce, tiffin and meal services, dairy and milk delivery, catering, bakeries and sweets', 6),
   ('Legal & Financial',     'legal',        'scale',         'Lawyers, CPAs, tax consultants, financial advisors',           7),
   ('Beauty & Wellness',     'beauty',       'sparkles',      'Salons, spas, gyms, yoga studios, therapists',                8),
   ('Real Estate',           'real-estate',  'home',          'Realtors, mortgage brokers, movers, storage',                 9),
