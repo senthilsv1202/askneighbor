@@ -259,6 +259,17 @@ export default function AddProvider({ community }) {
             <textarea value={form.description} onChange={updateField('description')} placeholder="What makes this provider great?" rows={3} className={`${inputClass} resize-none`} />
           </div>
 
+          {/* Promoted above the address fields: this decides which specialty
+              heading the provider is listed under on the category page, so it
+              matters more than most of what follows. */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Specialty
+              <span className="font-normal text-slate-400"> — groups them on the category page</span>
+            </label>
+            <input type="text" value={form.services} onChange={updateField('services')} placeholder="e.g., Plumbing, Electrical" className={inputClass} />
+          </div>
+
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
@@ -293,11 +304,6 @@ export default function AddProvider({ community }) {
               <label className="block text-sm font-medium text-slate-700 mb-1">ZIP Code</label>
               <input type="text" value={form.zip_code} onChange={updateField('zip_code')} placeholder="08831" className={inputClass} />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Services (comma-separated)</label>
-            <input type="text" value={form.services} onChange={updateField('services')} placeholder="Plumbing, Electrical, Painting" className={inputClass} />
           </div>
 
           <div>
