@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { MessageSquare, Sparkles, FileText, Loader2 } from 'lucide-react';
+import { MessageSquare, Sparkles, FileText, Loader2, ImageIcon, AlertCircle } from 'lucide-react';
 import { api } from '../lib/api.js';
+import { downscaleToBase64 } from '../lib/image.js';
 
 export default function AddProvider({ community }) {
   const [searchParams] = useSearchParams();
@@ -13,6 +14,7 @@ export default function AddProvider({ community }) {
   const [parsedProviders, setParsedProviders] = useState([]);
   const [parsing, setParsing] = useState(false);
   const [parseError, setParseError] = useState('');
+  const [missing, setMissing] = useState([]);
   const [form, setForm] = useState({
     name: '', category_id: '', phone: '', email: '', website: '',
     address: '', city: '', state: '', zip_code: '', description: '',
@@ -31,6 +33,40 @@ export default function AddProvider({ community }) {
       }
     }).catch(console.error);
   }, []);
+
+  async function parseScreenshot(file) {
+    if (!file) return;
+    setParsing(true);
+    setParseError('');
+    setMissing([]);
+    try {
+      const { base64, media_type } = await downscaleToBase64(file);
+      const { provider: p } = await api.parseImage(base64, media_type);
+      setForm((f) => ({
+        ...f,
+        name: p.name || '',
+        category_id: categoryIdByName(p.category) || f.category_id,
+        phone: p.phone || '',
+        email: p.email || '',
+        website: p.website || '',
+        address: p.address || '',
+        city: p.city || '',
+        state: p.state || '',
+        zip_code: p.zip_code || '',
+        description: (p.description || '') + (p.recommended_by ? ` Recommended by ${p.recommended_by}.` : ''),
+        services: (p.services || []).join(', '),
+        insurance_accepted: (p.insurance_accepted || []).join(', '),
+      }));
+      // A shared contact card shows a name but hides the number, so name what is
+      // still missing rather than letting it save looking complete.
+      setMissing(Array.isArray(p.missing) ? p.missing : []);
+      setMode('form');
+    } catch (err) {
+      setParseError(err.message);
+    } finally {
+      setParsing(false);
+    }
+  }
 
   function formatPhone(value) {
     const digits = value.replace(/\D/g, '').slice(0, 10);
@@ -149,10 +185,35 @@ export default function AddProvider({ community }) {
         <button onClick={() => setMode('paste')} className={tabClass(mode === 'paste')}>
           <MessageSquare className="w-4 h-4" /> Paste WhatsApp Message
         </button>
+        <label className={`${tabClass(mode === 'image')} cursor-pointer`}>
+          <ImageIcon className="w-4 h-4" /> Upload Screenshot
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => { setMode('image'); parseScreenshot(e.target.files?.[0]); e.target.value = ''; }}
+          />
+        </label>
         <button onClick={() => setMode('export')} className={tabClass(mode === 'export')}>
           <Sparkles className="w-4 h-4" /> Import Chat Export
         </button>
       </div>
+
+      {parsing && mode === 'image' && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6 flex items-center gap-2 text-slate-600">
+          <Loader2 className="w-4 h-4 animate-spin" /> Reading the screenshot…
+        </div>
+      )}
+
+      {missing.length > 0 && (
+        <div className="flex gap-2 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+          <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800">
+            Read from your screenshot. Still needs you: <span className="font-medium">{missing.join(', ')}</span>.
+            A shared WhatsApp contact card hides the number — tap the contact to see it.
+          </p>
+        </div>
+      )}
 
       {mode === 'paste' && (
         <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
