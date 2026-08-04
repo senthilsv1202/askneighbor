@@ -8,7 +8,7 @@ const router = Router();
 // schema.sql — the category set is currently duplicated across both.
 const CATEGORIES = [
   'Doctors & Medical', 'Home Services', 'Auto Services', 'Education & Tutoring',
-  'Childcare', 'Restaurants & Food', 'Legal & Financial', 'Beauty & Wellness',
+  'Childcare', 'Restaurants & Groceries', 'Legal & Financial', 'Beauty & Wellness',
   'Real Estate', 'Pet Services', 'Cleaning Services', 'Technology',
   'Driving Schools'
 ];

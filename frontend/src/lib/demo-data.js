@@ -4,7 +4,7 @@ export const demoCategories = [
   { id: '3', name: 'Auto Services', slug: 'auto', icon: 'car', description: 'Mechanics, body shops, car wash, towing', sort_order: 3 },
   { id: '4', name: 'Education & Tutoring', slug: 'education', icon: 'graduation-cap', description: 'Tutors, music teachers, test prep, schools', sort_order: 4 },
   { id: '5', name: 'Childcare', slug: 'childcare', icon: 'baby', description: 'Babysitters, daycares, nannies, after-school programs', sort_order: 5 },
-  { id: '6', name: 'Restaurants & Food', slug: 'food', icon: 'utensils', description: 'Restaurants, grocery stores, organic and halal meat, butchers, fish markets, fresh produce, tiffin and meal services, dairy and milk delivery, catering, bakeries and sweets', sort_order: 6 },
+  { id: '6', name: 'Restaurants & Groceries', slug: 'food', icon: 'utensils', description: 'Restaurants, grocery stores, organic and halal meat, butchers, fish markets, fresh produce, tiffin and meal services, dairy and milk delivery, catering, bakeries and sweets', sort_order: 6 },
   { id: '7', name: 'Legal & Financial', slug: 'legal', icon: 'scale', description: 'Lawyers, CPAs, tax consultants, financial advisors', sort_order: 7 },
   { id: '8', name: 'Beauty & Wellness', slug: 'beauty', icon: 'sparkles', description: 'Salons, spas, gyms, yoga studios, therapists', sort_order: 8 },
   { id: '9', name: 'Real Estate', slug: 'real-estate', icon: 'home', description: 'Realtors, mortgage brokers, movers, storage', sort_order: 9 },
@@ -51,7 +51,7 @@ export const demoProviders = [
   },
   {
     id: 'p4', name: 'Patel Brothers Grocery', category_id: '6',
-    categories: { name: 'Restaurants & Food', slug: 'food', icon: 'utensils' },
+    categories: { name: 'Restaurants & Groceries', slug: 'food', icon: 'utensils' },
     phone: '(732) 555-0404', website: 'https://patelbros.com',
     address: '789 Route 33', city: 'Monroe Township', state: 'NJ', zip_code: '08831',
     description: 'Largest Indian grocery store in the area. Fresh vegetables, spices, snacks, frozen foods, and ready-to-eat meals.',
