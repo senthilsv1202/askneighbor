@@ -228,7 +228,12 @@ export default function ProviderPage({ user }) {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Services (comma-separated)</label>
+              {/* Editing this is how a provider stuck under "Other" gets moved
+                  into the right specialty heading, so name it for that job. */}
+              <label className="block text-xs font-medium text-slate-600 mb-1">
+                Specialty
+                <span className="font-normal text-slate-400"> — groups them on the category page</span>
+              </label>
               <input type="text" value={editForm.services} onChange={(e) => setEditForm({ ...editForm, services: e.target.value })}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
             </div>
