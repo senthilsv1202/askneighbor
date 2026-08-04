@@ -127,10 +127,8 @@ export default function Home({ user, community }) {
         <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 mb-4">
           {user ? (
             <>
-              What do you need today?<br />
-              <span className="text-primary-600">
-                {community?.name ? `${community.name} has answers.` : 'Your neighbors have answers.'}
-              </span>
+              Find someone your neighbors<br />
+              <span className="text-primary-600">already trust.</span>
             </>
           ) : (
             <>
@@ -140,8 +138,11 @@ export default function Home({ user, community }) {
           )}
         </h1>
         <p className="text-lg text-slate-600 mb-8 max-w-2xl mx-auto">
+          {/* The community name lives here rather than in the headline: it reads
+              better than a proper noun in 48px type, and long names like
+              "East Brunswick Indian Families Association" wrapped badly there. */}
           {user
-            ? 'Ask in your own words — every answer comes from a neighbor who’s been there.'
+            ? `Ask in your own words — every recommendation comes from a neighbor${community?.name ? ` in ${community.name}` : ''}.`
             : 'The pediatrician, the handyman who actually shows up, the CPA who knows H-1B taxes — your community has recommended them all, and AskNeighbor keeps them searchable.'}
         </p>
 
