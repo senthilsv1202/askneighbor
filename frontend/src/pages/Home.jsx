@@ -119,14 +119,30 @@ export default function Home({ user, community }) {
       )}
 
       <section className="text-center py-8">
-        <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 mb-4">
-          Stop asking WhatsApp<br />
-          <span className="text-primary-600">the same question.</span>
+        {/* Visitors get the question they already recognise from the group chat.
+            Members are past being sold to, so they get a prompt to act on instead,
+            personalised to the community they are actually browsing. */}
+        {/* text-3xl on phones: the copy runs to four lines at 36px, pushing the
+            search box (the actual CTA) below the fold. Desktop keeps text-5xl. */}
+        <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-900 mb-4">
+          {user ? (
+            <>
+              What do you need today?<br />
+              <span className="text-primary-600">
+                {community?.name ? `${community.name} has answers.` : 'Your neighbors have answers.'}
+              </span>
+            </>
+          ) : (
+            <>
+              Who&rsquo;s good around here?<br />
+              <span className="text-primary-600">Your neighbors already answered.</span>
+            </>
+          )}
         </h1>
         <p className="text-lg text-slate-600 mb-8 max-w-2xl mx-auto">
           {user
-            ? 'Ask in your own words — answers come from your neighbors’ own recommendations.'
-            : 'The best pediatrician, the handyman who actually shows up, the CPA who knows H-1B taxes — your community has already recommended them all. AskNeighbor keeps those answers searchable instead of buried in six months of chat history.'}
+            ? 'Ask in your own words — every answer comes from a neighbor who’s been there.'
+            : 'The pediatrician, the handyman who actually shows up, the CPA who knows H-1B taxes — your community has recommended them all, and AskNeighbor keeps them searchable.'}
         </p>
 
         <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-3">
@@ -143,7 +159,7 @@ export default function Home({ user, community }) {
         </form>
         <p className="flex items-center justify-center gap-1.5 text-sm text-slate-500">
           <Sparkles className="w-4 h-4 text-primary-500" />
-          Ask in a full sentence — AI reads your neighbors' reviews to answer.
+          AI reads your neighbors&rsquo; reviews to answer — not the whole internet.
         </p>
       </section>
 
