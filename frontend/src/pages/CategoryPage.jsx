@@ -4,6 +4,39 @@ import { ChevronRight, SlidersHorizontal, Plus, MessageSquare, Sparkles, Loader2
 import { api } from '../lib/api.js';
 import ProviderCard from '../components/ProviderCard.jsx';
 
+const UNGROUPED = 'Other';
+
+// Broad categories like "Home Services" mix plumbers, electricians and appliance
+// repair into one list. Providers already carry a services[] array, so it doubles
+// as a sub-grouping without needing subcategories in the schema.
+//
+// Only the first service is used: a provider listing both "Plumbing" and
+// "Electrical" appears once under Plumbing rather than being duplicated down the
+// page, which reads as two separate businesses.
+function groupBySpecialty(providers) {
+  const buckets = new Map();
+
+  for (const provider of providers) {
+    const primary = (provider.services || []).find((s) => s && s.trim());
+    const label = primary ? primary.trim() : UNGROUPED;
+    // Group case-insensitively so "plumbing" and "Plumbing" do not split apart,
+    // but display the first spelling actually entered.
+    const key = label.toLowerCase();
+    if (!buckets.has(key)) buckets.set(key, { label, providers: [] });
+    buckets.get(key).providers.push(provider);
+  }
+
+  return [...buckets.values()].sort((a, b) => {
+    // Unlabelled providers sink to the bottom; otherwise biggest group first.
+    if (a.label === UNGROUPED) return 1;
+    if (b.label === UNGROUPED) return -1;
+    if (b.providers.length !== a.providers.length) {
+      return b.providers.length - a.providers.length;
+    }
+    return a.label.localeCompare(b.label);
+  });
+}
+
 export default function CategoryPage({ user, community }) {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -120,6 +153,21 @@ export default function CategoryPage({ user, community }) {
 
   const inputClass = 'w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm';
 
+  const groups = groupBySpecialty(providers);
+  const namedGroups = groups.filter((g) => g.label !== UNGROUPED);
+  // Needs at least two named specialties to be worth splitting up. One named
+  // group plus an "Other" pile is noise, not structure — it just relabels a list.
+  const showGroups = namedGroups.length >= 2;
+
+  // Suggest specialties already in use here, so entries cluster into existing
+  // groups instead of each person inventing a slightly different label.
+  const existingSpecialties = namedGroups
+    .slice(0, 3)
+    .map((g) => g.label);
+  const specialtyPlaceholder = existingSpecialties.length
+    ? `e.g., ${existingSpecialties.join(', ')}`
+    : 'e.g., Plumbing, Electrical';
+
   return (
     <div>
       <div className="flex items-center gap-2 text-sm text-slate-500 mb-6">
@@ -217,6 +265,23 @@ export default function CategoryPage({ user, community }) {
                 </div>
               </div>
 
+              {/* Promoted out of "More details": this field decides which
+                  sub-heading the provider is listed under, so burying it meant
+                  new entries defaulted to "Other". */}
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">
+                  Specialty
+                  <span className="font-normal text-slate-400"> — groups them on this page</span>
+                </label>
+                <input
+                  type="text"
+                  value={form.services}
+                  onChange={updateField('services')}
+                  placeholder={specialtyPlaceholder}
+                  className={inputClass}
+                />
+              </div>
+
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-1">Why do you recommend them?</label>
                 <textarea value={form.description} onChange={updateField('description')} placeholder="What makes this provider great?" rows={2} className={`${inputClass} resize-none`} />
@@ -257,10 +322,6 @@ export default function CategoryPage({ user, community }) {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-600 mb-1">Services (comma-separated)</label>
-                    <input type="text" value={form.services} onChange={updateField('services')} placeholder="Plumbing, Electrical" className={inputClass} />
-                  </div>
-                  <div>
                     <label className="block text-xs font-medium text-slate-600 mb-1">Insurance Accepted (comma-separated)</label>
                     <input type="text" value={form.insurance_accepted} onChange={updateField('insurance_accepted')} placeholder="Aetna, BlueCross" className={inputClass} />
                   </div>
@@ -294,6 +355,24 @@ export default function CategoryPage({ user, community }) {
           >
             Be the first to recommend one
           </button>
+        </div>
+      ) : showGroups ? (
+        <div className="space-y-8">
+          {groups.map((group) => (
+            <section key={group.label}>
+              <div className="flex items-baseline gap-2 mb-3">
+                <h2 className="text-lg font-bold text-slate-900">{group.label}</h2>
+                <span className="text-sm text-slate-400">
+                  {group.providers.length}
+                </span>
+              </div>
+              <div className="grid gap-4">
+                {group.providers.map((provider) => (
+                  <ProviderCard key={provider.id} provider={provider} />
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
       ) : (
         <div className="grid gap-4">
