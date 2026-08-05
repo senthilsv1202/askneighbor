@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Phone, MessageSquare } from 'lucide-react';
+import { MapPin, Phone, MessageSquare, User } from 'lucide-react';
 import StarRating from './StarRating.jsx';
 
 export default function ProviderCard({ provider }) {
@@ -15,11 +15,20 @@ export default function ProviderCard({ provider }) {
           <h3 className="text-lg font-semibold text-slate-900 group-hover:text-primary-600 transition-colors">
             {provider.name}
           </h3>
-          {category && (
-            <span className="inline-block mt-1 px-2.5 py-0.5 bg-primary-50 text-primary-700 text-xs font-medium rounded-full">
-              {category.name}
-            </span>
-          )}
+          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+            {category && (
+              <span className="inline-block px-2.5 py-0.5 bg-primary-50 text-primary-700 text-xs font-medium rounded-full">
+                {category.name}
+              </span>
+            )}
+            {/* A neighbour offering a skill reads very differently from a
+                business, so it is worth calling out rather than blending in. */}
+            {provider.is_neighbor && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-teal-50 text-teal-700 text-xs font-medium rounded-full">
+                <User className="w-3 h-3" /> Neighbor
+              </span>
+            )}
+          </div>
         </div>
         <div className="text-right shrink-0 ml-4">
           <div className="flex items-center gap-1">

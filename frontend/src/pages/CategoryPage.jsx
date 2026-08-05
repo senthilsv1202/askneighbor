@@ -172,7 +172,11 @@ export default function CategoryPage({ user, community }) {
         ...form,
         category_id: category.id,
         services: form.services ? form.services.split(',').map((s) => s.trim()).filter(Boolean) : [],
-        insurance_accepted: form.insurance_accepted ? form.insurance_accepted.split(',').map((s) => s.trim()).filter(Boolean) : []
+        insurance_accepted: form.insurance_accepted ? form.insurance_accepted.split(',').map((s) => s.trim()).filter(Boolean) : [],
+        // This quick form only adds businesses. Neighbours need the consent step,
+        // which lives on the full Add page.
+        is_neighbor: false,
+        listing_consent: true
       };
       const provider = await api.createProvider(payload);
       setShowAddForm(false);

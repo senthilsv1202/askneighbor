@@ -4,6 +4,16 @@ import { maskProviders } from '../lib/mask.js';
 
 const router = Router();
 
+// PostgREST reports an unknown column as PGRST204 against its schema cache,
+// rather than the Postgres undefined-column code.
+function missingColumn(error) {
+  const code = error?.code || '';
+  const message = error?.message || '';
+  return code === 'PGRST204'
+    || code === '42703'
+    || /could not find the '(is_neighbor|listing_consent)' column/i.test(message);
+}
+
 // List providers — requires auth, returns masked contact info
 router.get('/', requireAuth, async (req, res) => {
   const { category, city, zip, q, sort = 'rating', page = 1, limit = 20, community_id, nearby } = req.query;
@@ -65,9 +75,18 @@ router.get('/:id', requireAuth, async (req, res) => {
 
 // Create provider — requires auth + consent acknowledgment
 router.post('/', requireAuth, async (req, res) => {
-  const { name, category_id, community_id, phone, email, website, address, city, state, zip_code, description, insurance_accepted, services, consent_acknowledged } = req.body;
+  const { name, category_id, community_id, phone, email, website, address, city, state, zip_code, description, insurance_accepted, services, is_neighbor, listing_consent } = req.body;
 
   if (!name || !category_id) return res.status(400).json({ error: 'Name and category are required' });
+
+  // A business phone number is public information; a neighbour's is not. Listing a
+  // private person without their agreement is the one thing here that could
+  // genuinely upset someone, so it is enforced rather than merely asked.
+  if (is_neighbor && !listing_consent) {
+    return res.status(400).json({
+      error: 'Please confirm this neighbour is happy to be listed before adding them.',
+    });
+  }
 
   let resolvedCommunityId = community_id;
   if (!resolvedCommunityId) {
@@ -80,14 +99,35 @@ router.post('/', requireAuth, async (req, res) => {
     resolvedCommunityId = membership?.community_id || null;
   }
 
-  const { data, error } = await req.supabase
-    .from('providers')
-    .insert({
-      name, category_id, community_id: resolvedCommunityId, phone, email, website, address, city, state, zip_code,
-      description, insurance_accepted, services, added_by: req.user.id
-    })
-    .select()
-    .single();
+  const base = {
+    name, category_id, community_id: resolvedCommunityId, phone, email, website, address, city, state, zip_code,
+    description, insurance_accepted, services, added_by: req.user.id,
+  };
+  const withConsent = {
+    ...base,
+    is_neighbor: Boolean(is_neighbor),
+    // Previously the form sent "consent" while this read "consent_acknowledged",
+    // so the tick box was never recorded anywhere. Now it is stored per row.
+    listing_consent: Boolean(listing_consent),
+  };
+
+  const insert = (row) => req.supabase.from('providers').insert(row).select().single();
+
+  let { data, error } = await insert(withConsent);
+
+  // neighbor-services.sql may not have been run yet. Adding a provider is the
+  // core action of the whole app, so fall back to the old shape rather than
+  // breaking it — but never silently drop a neighbour listing, since that would
+  // lose the consent record that makes it legitimate.
+  if (error && missingColumn(error)) {
+    if (is_neighbor) {
+      return res.status(503).json({
+        error: 'Neighbor listings are not set up yet. Run neighbor-services.sql, or add this as a business for now.',
+        setup_required: true,
+      });
+    }
+    ({ data, error } = await insert(base));
+  }
 
   if (error) return res.status(500).json({ error: error.message });
   res.status(201).json(data);

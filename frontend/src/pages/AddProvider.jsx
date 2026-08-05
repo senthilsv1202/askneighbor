@@ -18,7 +18,7 @@ export default function AddProvider({ community }) {
   const [form, setForm] = useState({
     name: '', category_id: '', phone: '', email: '', website: '',
     address: '', city: '', state: '', zip_code: '', description: '',
-    services: '', insurance_accepted: ''
+    services: '', insurance_accepted: '', is_neighbor: false
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -159,7 +159,11 @@ export default function AddProvider({ community }) {
         ...form,
         community_id: community?.id || null,
         services: form.services ? form.services.split(',').map((s) => s.trim()).filter(Boolean) : [],
-        insurance_accepted: form.insurance_accepted ? form.insurance_accepted.split(',').map((s) => s.trim()).filter(Boolean) : []
+        insurance_accepted: form.insurance_accepted ? form.insurance_accepted.split(',').map((s) => s.trim()).filter(Boolean) : [],
+        // The API reads listing_consent; the form field is called consent. They
+        // were previously named differently on each side and never lined up, so
+        // the tick box was recorded nowhere.
+        listing_consent: Boolean(form.consent)
       };
       const provider = await api.createProvider(payload);
       navigate(`/provider/${provider.id}`);
@@ -316,6 +320,27 @@ export default function AddProvider({ community }) {
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Who is this?</label>
+            <div className="flex gap-2">
+              {[[false, 'A business'], [true, 'A neighbor offering a skill']].map(([val, label]) => (
+                <button
+                  key={String(val)}
+                  type="button"
+                  onClick={() => setForm({ ...form, is_neighbor: val })}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${form.is_neighbor === val ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {form.is_neighbor && (
+              <p className="text-xs text-slate-500 mt-2">
+                Mehendi, tiffin, tutoring, music or dance lessons, tailoring, photography, babysitting — things neighbors do themselves.
+              </p>
+            )}
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
             <textarea value={form.description} onChange={updateField('description')} placeholder="What makes this provider great?" rows={3} className={`${inputClass} resize-none`} />
           </div>
@@ -381,8 +406,9 @@ export default function AddProvider({ community }) {
                 className="mt-1 w-4 h-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
               />
               <span className="text-sm text-slate-700">
-                I confirm that the information I'm sharing is publicly available business/professional contact information, or I have the provider's permission to share it.
-                Providers can <a href="/privacy" className="text-primary-600 underline">request removal</a> at any time.
+                {form.is_neighbor
+                  ? <>I have asked this neighbor and they are happy to be listed here. Sharing a neighbor&rsquo;s details without asking is not okay — they can <a href="/privacy" className="text-primary-600 underline">request removal</a> at any time.</>
+                  : <>I confirm that the information I&rsquo;m sharing is publicly available business/professional contact information, or I have the provider&rsquo;s permission to share it. Providers can <a href="/privacy" className="text-primary-600 underline">request removal</a> at any time.</>}
               </span>
             </label>
           </div>
