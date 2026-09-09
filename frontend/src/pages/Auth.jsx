@@ -20,6 +20,7 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [sendingReset, setSendingReset] = useState(false);
   const navigate = useNavigate();
 
   async function validateInvite() {
@@ -78,6 +79,29 @@ export default function Auth() {
       navigate('/');
     }
     setLoading(false);
+  }
+
+  async function sendReset() {
+    if (!email.trim()) { setError('Enter your email first, then tap this again.'); return; }
+    setSendingReset(true);
+    setError('');
+    setMessage('');
+    // redirectTo must be allow-listed in Supabase, and falls back to the Site URL
+    // if it is not. App.jsx therefore listens for the recovery event globally, so
+    // the link works wherever it happens to land.
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    // Never reveal whether an address has an account — that would turn this into
+    // a way to enumerate who is in the community.
+    if (resetError && !/rate|limit|seconds/i.test(resetError.message)) {
+      setMessage('If that email has an account, a reset link is on its way.');
+    } else if (resetError) {
+      setError(resetError.message);
+    } else {
+      setMessage('If that email has an account, a reset link is on its way. Check spam too.');
+    }
+    setSendingReset(false);
   }
 
   const inputClass = 'w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500';
@@ -175,7 +199,19 @@ export default function Auth() {
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} required />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-slate-700">Password</label>
+              {!isSignUp && (
+                <button
+                  type="button"
+                  onClick={sendReset}
+                  disabled={sendingReset}
+                  className="text-xs text-primary-600 hover:underline disabled:opacity-50"
+                >
+                  {sendingReset ? 'Sending…' : 'Forgot password?'}
+                </button>
+              )}
+            </div>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputClass} required minLength={6} />
           </div>
 

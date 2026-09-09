@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { supabase, isDemoMode } from './lib/supabase.js';
 import { api } from './lib/api.js';
@@ -14,12 +14,14 @@ import Privacy from './pages/Privacy.jsx';
 import CreateCommunity from './pages/CreateCommunity.jsx';
 import Housing from './pages/Housing.jsx';
 import Events from './pages/Events.jsx';
+import ResetPassword from './pages/ResetPassword.jsx';
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [community, setCommunity] = useState(null);
   const [myCommunities, setMyCommunities] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (isDemoMode) {
@@ -30,8 +32,13 @@ export default function App() {
       setUser(session?.user ?? null);
       setLoading(false);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      // A recovery link establishes a real session, so without this the user is
+      // silently signed in and never gets to choose a new password. Handled here
+      // rather than only on /reset-password because Supabase falls back to the
+      // Site URL when redirectTo is not allow-listed, landing them on the homepage.
+      if (event === 'PASSWORD_RECOVERY') navigate('/reset-password');
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -70,6 +77,7 @@ export default function App() {
           <Route path="/add" element={user ? <AddProvider community={community} /> : <Auth />} />
           <Route path="/search" element={<SearchResults community={community} user={user} />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/favorites" element={user ? <Favorites /> : <Auth />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/events" element={user ? <Events community={community} /> : <Auth />} />
