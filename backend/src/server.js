@@ -70,4 +70,23 @@ app.use('/api/events', eventsRouter);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
+// Supabase pauses a free-tier project after about a week without requests. When
+// that happened the hostname stopped resolving entirely: the site still served
+// HTTP 200 while every API call failed, so the outage was invisible without
+// checking. That is a trap for an app still building an audience — the one time
+// someone finally opens it is exactly when it is most likely to be asleep.
+//
+// This backend is always on, so a trivial query on a timer keeps the project
+// counted as active. Cheap: one tiny request every six hours.
+const KEEPALIVE_INTERVAL_MS = 6 * 60 * 60 * 1000;
+
+async function keepDatabaseWarm() {
+  const { error } = await supabase.from('categories').select('id').limit(1);
+  if (error) console.error('keep-alive query failed:', error.message);
+}
+
+// unref() so the timer never holds the process open during a shutdown.
+setInterval(keepDatabaseWarm, KEEPALIVE_INTERVAL_MS).unref();
+keepDatabaseWarm();
+
 app.listen(PORT, () => console.log(`AskNeighbor API running on port ${PORT}`));
