@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import crypto from 'crypto';
 import { requireAuth } from '../middleware/auth.js';
 import { firstName } from '../lib/mask.js';
 import { isCommunityMember } from '../lib/scope.js';
@@ -21,6 +22,14 @@ function tableMissing(error) {
   return code === UNDEFINED_TABLE
     || code === POSTGREST_NO_TABLE
     || /could not find the table .*(events|event_photos)/i.test(message);
+}
+
+// event-share-links.sql not run yet. Postgres answers 42703 directly; PostgREST
+// answers PGRST204 from its schema cache.
+function missingShareColumn(error) {
+  const code = error?.code || '';
+  return code === '42703' || code === 'PGRST204'
+    || /share_token/i.test(error?.message || '');
 }
 
 function notSetUp(res) {
@@ -50,6 +59,57 @@ async function signPhotos(supabase, photos) {
     url: urlByPath.get(p.storage_path) || null,
   }));
 }
+
+// ── Public album ────────────────────────────────────────────────────────────
+// Deliberately unauthenticated: the whole point is that someone can tap a link
+// from the group chat and see the photos without an account. Access rests
+// entirely on the token being unguessable, so it is 48 hex characters and the
+// lookup is exact-match.
+//
+// Mounted before '/:id' so the literal path is not swallowed by that route.
+router.get('/album/:token', async (req, res) => {
+  const { token } = req.params;
+  if (!token || token.length < 20) return res.status(404).json({ error: 'Album not found' });
+
+  const { data: event, error } = await req.supabase
+    .from('events')
+    .select('id, title, description, location, event_date, share_token')
+    .eq('share_token', token)
+    .maybeSingle();
+
+  // This endpoint is public, so it never reports why a lookup failed. A missing
+  // column or table is answered as "not found" like any bad token: leaking
+  // "column events.share_token does not exist" tells a stranger about the schema
+  // and means nothing to the person who just tapped a link.
+  if (error) {
+    if (!tableMissing(error) && !missingShareColumn(error)) {
+      console.error('Public album lookup failed:', error.message);
+    }
+    return res.status(404).json({ error: 'Album not found' });
+  }
+  if (!event) return res.status(404).json({ error: 'Album not found' });
+
+  const { data: photos } = await req.supabase
+    .from('event_photos')
+    .select('id, storage_path, caption, created_at')
+    .eq('event_id', event.id)
+    .order('created_at');
+
+  const signed = await signPhotos(req.supabase, photos || []);
+
+  // No community name and no uploader names. A public link should reveal the
+  // occasion and the pictures, not who is in the community or who took what.
+  res.json({
+    album: {
+      title: event.title,
+      description: event.description,
+      location: event.location,
+      event_date: event.event_date,
+      photo_count: signed.length,
+    },
+    photos: signed.map(({ id, url, caption }) => ({ id, url, caption })),
+  });
+});
 
 router.get('/', requireAuth, async (req, res) => {
   const { community_id } = req.query;
@@ -118,6 +178,8 @@ router.get('/:id', requireAuth, async (req, res) => {
       created_by_name: firstName(event.profiles?.full_name),
       is_mine: event.created_by === req.user.id,
       is_past: event.event_date < today(),
+      // Only ever returned to the organiser, who is the only one who can change it.
+      share_token: event.created_by === req.user.id ? (event.share_token || null) : null,
     },
     photos: await signPhotos(req.supabase, photos || []),
   });
@@ -143,6 +205,38 @@ router.post('/', requireAuth, async (req, res) => {
 
   if (error) return tableMissing(error) ? notSetUp(res) : res.status(500).json({ error: error.message });
   res.status(201).json({ event: data });
+});
+
+// Turn public sharing on or off for one event. Only the organiser decides.
+router.post('/:id/share', requireAuth, async (req, res) => {
+  const { enabled } = req.body;
+
+  const { data: event, error: findError } = await req.supabase
+    .from('events').select('id, community_id, created_by').eq('id', req.params.id).maybeSingle();
+  if (findError) return tableMissing(findError) ? notSetUp(res) : res.status(500).json({ error: findError.message });
+  if (!event) return res.status(404).json({ error: 'Event not found' });
+  if (event.created_by !== req.user.id) {
+    return res.status(403).json({ error: 'Only whoever added this event can share it' });
+  }
+
+  // Revoking sets the token back to NULL, which permanently breaks any link
+  // already sent. Re-enabling mints a fresh one rather than restoring the old.
+  const share_token = enabled === false ? null : crypto.randomBytes(24).toString('hex');
+
+  const { error } = await req.supabase
+    .from('events').update({ share_token }).eq('id', event.id);
+
+  if (error) {
+    if (/share_token/i.test(error.message)) {
+      return res.status(503).json({
+        error: 'Share links are not set up yet. Run event-share-links.sql first.',
+        setup_required: true,
+      });
+    }
+    return res.status(500).json({ error: error.message });
+  }
+
+  res.json({ share_token });
 });
 
 router.post('/:id/photos', requireAuth, async (req, res) => {

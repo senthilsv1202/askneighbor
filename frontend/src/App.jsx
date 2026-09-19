@@ -15,6 +15,7 @@ import CreateCommunity from './pages/CreateCommunity.jsx';
 import Housing from './pages/Housing.jsx';
 import Events from './pages/Events.jsx';
 import ResetPassword from './pages/ResetPassword.jsx';
+import PublicAlbum from './pages/PublicAlbum.jsx';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -78,6 +79,8 @@ export default function App() {
           <Route path="/search" element={<SearchResults community={community} user={user} />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          {/* Public on purpose — no auth gate. */}
+          <Route path="/album/:token" element={<PublicAlbum />} />
           <Route path="/favorites" element={user ? <Favorites /> : <Auth />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/events" element={user ? <Events community={community} /> : <Auth />} />

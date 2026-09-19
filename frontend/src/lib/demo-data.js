@@ -184,6 +184,8 @@ export const demoApi = {
     });
   },
   getEvents: () => Promise.resolve({ upcoming: [], past: [] }),
+  getAlbum: () => Promise.reject(new Error('Connect Supabase to enable albums')),
+  shareEvent: () => Promise.reject(new Error('Connect Supabase to enable albums')),
   getEvent: () => Promise.resolve({ event: null, photos: [] }),
   createEvent: () => Promise.reject(new Error('Connect Supabase to enable events')),
   uploadEventPhoto: () => Promise.reject(new Error('Connect Supabase to enable events')),

@@ -60,6 +60,8 @@ const liveApi = {
   updateListing: (id, data) => request(`/api/listings/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   screenListing: (data) => request('/api/listings/screen', { method: 'POST', body: JSON.stringify(data) }),
   getEvents: (community_id) => request(`/api/events?community_id=${community_id}`),
+  getAlbum: (token) => request(`/api/events/album/${token}`),
+  shareEvent: (id, enabled) => request(`/api/events/${id}/share`, { method: 'POST', body: JSON.stringify({ enabled }) }),
   getEvent: (id) => request(`/api/events/${id}`),
   createEvent: (data) => request('/api/events', { method: 'POST', body: JSON.stringify(data) }),
   uploadEventPhoto: (id, image, media_type, caption) =>

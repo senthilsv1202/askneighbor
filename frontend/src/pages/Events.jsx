@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   CalendarDays, Plus, X, MapPin, Clock, Images, Upload, Loader2,
-  ArrowLeft, Trash2,
+  ArrowLeft, Trash2, Share2, Copy, Check, Link2Off,
 } from 'lucide-react';
 import { api } from '../lib/api.js';
 import { downscaleToBase64, PHOTO_OPTS } from '../lib/image.js';
@@ -60,8 +60,31 @@ function EventDetail({ eventId, onBack }) {
   const [uploading, setUploading] = useState(0);
   const [error, setError] = useState('');
   const [lightbox, setLightbox] = useState(null);
+  const [sharing, setSharing] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => { load(); }, [eventId]);
+
+  async function toggleShare(enabled) {
+    setSharing(true);
+    setError('');
+    try {
+      await api.shareEvent(eventId, enabled);
+      load();
+    } catch (err) {
+      setError(err.body?.setup_required
+        ? 'Share links need event-share-links.sql to be run first.'
+        : err.message);
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  function copyLink(url) {
+    navigator.clipboard?.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   function load() {
     setLoading(true);
@@ -141,6 +164,57 @@ function EventDetail({ eventId, onBack }) {
             onChange={(e) => { upload(e.target.files); e.target.value = ''; }} />
         </label>
       </div>
+
+      {event.is_mine && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-4">
+          {event.share_token ? (
+            <>
+              <div className="flex items-center gap-2 mb-2">
+                <Share2 className="w-4 h-4 text-primary-600" />
+                <p className="text-sm font-semibold text-slate-900">Anyone with this link can see the photos</p>
+              </div>
+              <div className="flex gap-2 mb-2">
+                <input
+                  readOnly
+                  value={`${window.location.origin}/album/${event.share_token}`}
+                  onFocus={(e) => e.target.select()}
+                  className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600"
+                />
+                <button
+                  onClick={() => copyLink(`${window.location.origin}/album/${event.share_token}`)}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-primary-600 text-white rounded-xl text-sm font-medium hover:bg-primary-700"
+                >
+                  {copied ? <><Check className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy</>}
+                </button>
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-slate-500">No sign-in needed \u2014 paste it straight into the group chat.</p>
+                <button
+                  onClick={() => toggleShare(false)}
+                  disabled={sharing}
+                  className="flex items-center gap-1 text-xs text-slate-500 hover:text-red-600 disabled:opacity-50"
+                >
+                  <Link2Off className="w-3.5 h-3.5" /> Turn off
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Share this album</p>
+                <p className="text-xs text-slate-500">Creates a link that opens without signing in. You can turn it off later.</p>
+              </div>
+              <button
+                onClick={() => toggleShare(true)}
+                disabled={sharing}
+                className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-200 disabled:opacity-50 shrink-0"
+              >
+                <Share2 className="w-4 h-4" /> {sharing ? 'Working\u2026' : 'Get link'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {uploading > 0 && (
         <p className="flex items-center gap-2 text-sm text-slate-500 mb-4">
