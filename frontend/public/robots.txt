@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
-Allow: /privacy
+# Private or per-user pages: nothing useful for a search engine.
+Disallow: /favorites
+Disallow: /add
+Disallow: /reset-password
+Disallow: /create-community
 Sitemap: https://askneighbor.org/sitemap.xml
