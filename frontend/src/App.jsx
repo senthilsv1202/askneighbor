@@ -1,4 +1,4 @@
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { supabase, isDemoMode } from './lib/supabase.js';
 import { api } from './lib/api.js';
@@ -23,6 +23,16 @@ export default function App() {
   const [community, setCommunity] = useState(null);
   const [myCommunities, setMyCommunities] = useState([]);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  // index.html ships one canonical link pointing at the home page, and every
+  // route is served from that same file. Left alone, /privacy and /auth tell
+  // Google "I am a copy of the home page" and are dropped from the index.
+  // Point the canonical at the page actually being shown.
+  useEffect(() => {
+    const link = document.querySelector('link[rel="canonical"]');
+    if (link) link.setAttribute('href', `https://askneighbor.org${pathname === '/' ? '/' : pathname.replace(/\/+$/, '')}`);
+  }, [pathname]);
 
   useEffect(() => {
     if (isDemoMode) {
